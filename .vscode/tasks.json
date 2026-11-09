@@ -1,0 +1,31 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Rojo: serve",
+      "type": "shell",
+      "command": "rojo",
+      "args": ["serve"],
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Rojo: build",
+      "type": "shell",
+      "command": "rojo",
+      "args": ["build", "-o", "build/game.rbxlx"]
+    },
+    {
+      "label": "Luau: format",
+      "type": "shell",
+      "command": "stylua",
+      "args": ["src"]
+    },
+    {
+      "label": "Luau: lint",
+      "type": "shell",
+      "command": "selene",
+      "args": ["src"]
+    }
+  ]
+}

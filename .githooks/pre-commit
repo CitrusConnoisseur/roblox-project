@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+# Fast local gate: format + lint. Full type-checking runs in CI.
+# Enable with:
+#   git config core.hooksPath .githooks
+set -eu
+
+if ! command -v stylua >/dev/null 2>&1; then
+	echo "pre-commit: stylua not found, skipping format check" >&2
+else
+	stylua --check src || {
+		echo "" >&2
+		echo "pre-commit: formatting issues found. Run: stylua src" >&2
+		exit 1
+	}
+fi
+
+if ! command -v selene >/dev/null 2>&1; then
+	echo "pre-commit: selene not found, skipping lint" >&2
+else
+	selene src
+fi
