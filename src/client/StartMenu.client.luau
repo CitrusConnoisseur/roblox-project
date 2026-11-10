@@ -2,6 +2,7 @@
 -- Start-up menu + in-game settings icon. Settings UI comes from Settings module.
 
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
@@ -184,23 +185,56 @@ menuGui.DisplayOrder = 10
 menuGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 menuGui.Parent = playerGui
 
-local bgImage = Instance.new("ImageLabel")
-bgImage.Name = "BackgroundImage"
-bgImage.Size = UDim2.fromScale(1, 1)
-bgImage.BackgroundColor3 = COLORS.BgImageTint
-bgImage.Image = "" -- TODO: replace with "rbxassetid://YOUR_IMAGE_ID"
-bgImage.ImageTransparency = 0.15
-bgImage.ScaleType = Enum.ScaleType.Crop
-bgImage.BorderSizePixel = 0
-bgImage.Parent = menuGui
+-- Animated neon-sunset background (start menu only). Replaced with a static image/VideoFrame if desired.
+local bg = Instance.new("Frame")
+bg.Name = "Background"
+bg.Size = UDim2.fromScale(1, 1)
+bg.BackgroundColor3 = Color3.fromRGB(10, 6, 20)
+bg.BorderSizePixel = 0
+bg.Parent = menuGui
+
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(8, 10, 40)), -- deep night blue
+	ColorSequenceKeypoint.new(0.28, Color3.fromRGB(60, 0, 90)), -- purple
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 0, 128)), -- neon magenta
+	ColorSequenceKeypoint.new(0.72, Color3.fromRGB(255, 90, 20)), -- neon orange
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 200, 60)), -- sunset gold
+})
+gradient.Rotation = 90
+gradient.Offset = Vector2.new(0, -0.15)
+gradient.Parent = bg
+
+-- Gentle looping motion (shift + slow rotation) for an animated neon-sunset feel.
+task.spawn(function()
+	local shiftA = TweenService:Create(
+		gradient,
+		TweenInfo.new(6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+		{ Offset = Vector2.new(0, 0.15), Rotation = 100 }
+	)
+	local shiftB = TweenService:Create(
+		gradient,
+		TweenInfo.new(6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+		{ Offset = Vector2.new(0, -0.15), Rotation = 80 }
+	)
+	while menuGui.Parent do
+		shiftA:Play()
+		shiftA.Completed:Wait()
+		if not menuGui.Parent then
+			break
+		end
+		shiftB:Play()
+		shiftB.Completed:Wait()
+	end
+end)
 
 local overlay = Instance.new("Frame")
 overlay.Name = "Overlay"
 overlay.Size = UDim2.fromScale(1, 1)
 overlay.BackgroundColor3 = COLORS.Overlay
-overlay.BackgroundTransparency = 0.35
+overlay.BackgroundTransparency = 0.4
 overlay.BorderSizePixel = 0
-overlay.Parent = bgImage
+overlay.Parent = bg
 
 -- Wider rectangular panel (more width to match height)
 local mainPanel = Instance.new("Frame")
