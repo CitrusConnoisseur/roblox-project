@@ -1,0 +1,260 @@
+--!strict
+-- Start-up menu + in-game settings icon. Settings UI comes from Settings module.
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+
+local Settings = require(script.Parent:WaitForChild("Settings"))
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local modalCount = 0
+
+local function setModal(open: boolean): ()
+	local camera = Workspace.CurrentCamera
+	if open then
+		modalCount += 1
+		player:SetAttribute("MenuMovementLocked", true)
+		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+		UserInputService.MouseIconEnabled = true
+		if camera then
+			camera.CameraType = Enum.CameraType.Scriptable
+		end
+	else
+		modalCount = math.max(modalCount - 1, 0)
+		if modalCount == 0 then
+			player:SetAttribute("MenuMovementLocked", false)
+			local cam = Workspace.CurrentCamera
+			if cam then
+				cam.CameraType = Enum.CameraType.Custom
+			end
+			UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+			UserInputService.MouseIconEnabled = false
+		end
+	end
+end
+
+local COLORS = {
+	BgImageTint = Color3.fromRGB(15, 15, 22),
+	Overlay = Color3.fromRGB(10, 10, 16),
+	Panel = Color3.fromRGB(32, 34, 48),
+	Text = Color3.fromRGB(240, 242, 248),
+	SubText = Color3.fromRGB(170, 176, 196),
+	Play = Color3.fromRGB(72, 199, 142),
+	PlayText = Color3.fromRGB(255, 255, 255),
+	SettingsBtn = Color3.fromRGB(88, 101, 242),
+	SettingsBtnText = Color3.fromRGB(255, 255, 255),
+	Icon = Color3.fromRGB(45, 48, 66),
+	IconText = Color3.fromRGB(240, 242, 248),
+}
+
+local function makeCorner(parent: Instance, radius: number): ()
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, radius)
+	c.Parent = parent
+end
+
+-- ===== Persistent in-game HUD (settings icon) =====
+local hudGui = Instance.new("ScreenGui")
+hudGui.Name = "GameHudGui"
+hudGui.ResetOnSpawn = false
+hudGui.IgnoreGuiInset = true
+hudGui.DisplayOrder = 5
+hudGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+hudGui.Parent = playerGui
+
+local iconButton = Instance.new("TextButton")
+iconButton.Name = "SettingsIcon"
+iconButton.AnchorPoint = Vector2.new(1, 0)
+iconButton.Position = UDim2.new(1, -16, 0, 16)
+iconButton.Size = UDim2.fromOffset(44, 44)
+iconButton.BackgroundColor3 = COLORS.Icon
+iconButton.BorderSizePixel = 0
+iconButton.Text = "⚙"
+iconButton.TextColor3 = COLORS.IconText
+iconButton.TextScaled = true
+iconButton.Font = Enum.Font.GothamBold
+iconButton.Visible = false -- shown after leaving the start menu
+iconButton.Parent = hudGui
+makeCorner(iconButton, 10)
+
+-- In-game settings overlay (transparent background)
+local ingameOverlay = Instance.new("Frame")
+ingameOverlay.Name = "InGameSettingsOverlay"
+ingameOverlay.Size = UDim2.fromScale(1, 1)
+ingameOverlay.BackgroundTransparency = 1 -- transparent background (in-game)
+ingameOverlay.BorderSizePixel = 0
+ingameOverlay.Visible = false
+ingameOverlay.Parent = hudGui
+
+local ingamePanel = Instance.new("Frame")
+ingamePanel.Name = "SettingsPanel"
+ingamePanel.AnchorPoint = Vector2.new(0.5, 0.5)
+ingamePanel.Position = UDim2.fromScale(0.5, 0.5)
+ingamePanel.Size = UDim2.fromOffset(640, 380)
+ingamePanel.BackgroundColor3 = COLORS.Panel
+ingamePanel.BackgroundTransparency = 0.08
+ingamePanel.BorderSizePixel = 0
+ingamePanel.Parent = ingameOverlay
+makeCorner(ingamePanel, 14)
+
+local ingameContent = Instance.new("Frame")
+ingameContent.Name = "Content"
+ingameContent.BackgroundTransparency = 1
+ingameContent.Position = UDim2.fromOffset(20, 16)
+ingameContent.Size = UDim2.new(1, -40, 1, -32)
+ingameContent.Parent = ingamePanel
+
+local remountIngame: () -> ()
+
+local function closeInGameSettings(): ()
+	ingameOverlay.Visible = false
+	iconButton.Visible = true
+	setModal(false)
+end
+
+remountIngame = function()
+	Settings.mount(ingameContent, closeInGameSettings, remountIngame)
+end
+remountIngame()
+
+iconButton.Activated:Connect(function()
+	iconButton.Visible = false
+	ingameOverlay.Visible = true
+	setModal(true)
+end)
+
+-- ===== Start-up menu =====
+local menuGui = Instance.new("ScreenGui")
+menuGui.Name = "StartMenuGui"
+menuGui.ResetOnSpawn = false
+menuGui.IgnoreGuiInset = true
+menuGui.DisplayOrder = 10
+menuGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+menuGui.Parent = playerGui
+
+local bgImage = Instance.new("ImageLabel")
+bgImage.Name = "BackgroundImage"
+bgImage.Size = UDim2.fromScale(1, 1)
+bgImage.BackgroundColor3 = COLORS.BgImageTint
+bgImage.Image = "" -- TODO: replace with "rbxassetid://YOUR_IMAGE_ID"
+bgImage.ImageTransparency = 0.15
+bgImage.ScaleType = Enum.ScaleType.Crop
+bgImage.BorderSizePixel = 0
+bgImage.Parent = menuGui
+
+local overlay = Instance.new("Frame")
+overlay.Name = "Overlay"
+overlay.Size = UDim2.fromScale(1, 1)
+overlay.BackgroundColor3 = COLORS.Overlay
+overlay.BackgroundTransparency = 0.35
+overlay.BorderSizePixel = 0
+overlay.Parent = bgImage
+
+-- Wider rectangular panel (more width to match height)
+local mainPanel = Instance.new("Frame")
+mainPanel.Name = "MainPanel"
+mainPanel.AnchorPoint = Vector2.new(0.5, 0.5)
+mainPanel.Position = UDim2.fromScale(0.5, 0.5)
+mainPanel.Size = UDim2.fromOffset(640, 380)
+mainPanel.BackgroundColor3 = COLORS.Panel
+mainPanel.BorderSizePixel = 0
+mainPanel.Parent = overlay
+makeCorner(mainPanel, 14)
+
+local title = Instance.new("TextLabel")
+title.BackgroundTransparency = 1
+title.Position = UDim2.fromOffset(28, 24)
+title.Size = UDim2.new(1, -56, 0, 54)
+title.Text = "My Game"
+title.TextColor3 = COLORS.Text
+title.TextScaled = true
+title.Font = Enum.Font.GothamBold
+title.Parent = mainPanel
+
+local subtitle = Instance.new("TextLabel")
+subtitle.BackgroundTransparency = 1
+subtitle.Position = UDim2.fromOffset(28, 78)
+subtitle.Size = UDim2.new(1, -56, 0, 28)
+subtitle.Text = "Ready to play?"
+subtitle.TextColor3 = COLORS.SubText
+subtitle.TextScaled = true
+subtitle.Font = Enum.Font.Gotham
+subtitle.Parent = mainPanel
+
+local playButton = Instance.new("TextButton")
+playButton.Name = "PlayButton"
+playButton.AnchorPoint = Vector2.new(0.5, 0)
+playButton.Position = UDim2.new(0.5, 0, 1, -130)
+playButton.Size = UDim2.fromOffset(260, 50)
+playButton.BackgroundColor3 = COLORS.Play
+playButton.BorderSizePixel = 0
+playButton.AutoButtonColor = true
+playButton.Text = "Play"
+playButton.TextColor3 = COLORS.PlayText
+playButton.TextScaled = true
+playButton.Font = Enum.Font.GothamBold
+playButton.Parent = mainPanel
+makeCorner(playButton, 8)
+
+local settingsButton = Instance.new("TextButton")
+settingsButton.Name = "SettingsButton"
+settingsButton.AnchorPoint = Vector2.new(0.5, 0)
+settingsButton.Position = UDim2.new(0.5, 0, 1, -68)
+settingsButton.Size = UDim2.fromOffset(260, 44)
+settingsButton.BackgroundColor3 = COLORS.SettingsBtn
+settingsButton.BorderSizePixel = 0
+settingsButton.AutoButtonColor = true
+settingsButton.Text = "Settings"
+settingsButton.TextColor3 = COLORS.SettingsBtnText
+settingsButton.TextScaled = true
+settingsButton.Font = Enum.Font.GothamBold
+settingsButton.Parent = mainPanel
+makeCorner(settingsButton, 8)
+
+-- Settings view inside the start menu (opaque/normal)
+local menuSettingsPanel = Instance.new("Frame")
+menuSettingsPanel.Name = "MenuSettingsPanel"
+menuSettingsPanel.AnchorPoint = Vector2.new(0.5, 0.5)
+menuSettingsPanel.Position = UDim2.fromScale(0.5, 0.5)
+menuSettingsPanel.Size = UDim2.fromOffset(640, 380)
+menuSettingsPanel.BackgroundColor3 = COLORS.Panel
+menuSettingsPanel.BorderSizePixel = 0
+menuSettingsPanel.Visible = false
+menuSettingsPanel.Parent = overlay
+makeCorner(menuSettingsPanel, 14)
+
+local menuSettingsContent = Instance.new("Frame")
+menuSettingsContent.BackgroundTransparency = 1
+menuSettingsContent.Position = UDim2.fromOffset(20, 16)
+menuSettingsContent.Size = UDim2.new(1, -40, 1, -32)
+menuSettingsContent.Parent = menuSettingsPanel
+
+local remountMenuSettings: () -> ()
+
+local function closeMenuSettings(): ()
+	menuSettingsPanel.Visible = false
+	mainPanel.Visible = true
+end
+
+remountMenuSettings = function()
+	Settings.mount(menuSettingsContent, closeMenuSettings, remountMenuSettings)
+end
+remountMenuSettings()
+
+settingsButton.Activated:Connect(function()
+	mainPanel.Visible = false
+	menuSettingsPanel.Visible = true
+end)
+
+playButton.Activated:Connect(function()
+	menuGui:Destroy()
+	iconButton.Visible = true -- keep in-game settings icon available
+	setModal(false) -- release start-menu camera lock
+	-- Add "start game" logic here later (e.g., enable controls, spawn, load a level).
+end)
+
+Settings.apply()
+setModal(true) -- lock camera while start menu is shown
