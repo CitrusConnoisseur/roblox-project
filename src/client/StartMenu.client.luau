@@ -193,14 +193,14 @@ bg.ClipsDescendants = true
 bg.BorderSizePixel = 0
 bg.Parent = menuGui
 
--- Slow zoom focused toward lower-center (sun area)
+-- Slow zoom focused toward the sun area (adjust anchor/position if needed for this image)
 local bgImage = Instance.new("ImageLabel")
 bgImage.Name = "BackgroundImage"
-bgImage.AnchorPoint = Vector2.new(0.5, 0.68)
-bgImage.Position = UDim2.fromScale(0.5, 0.68)
+bgImage.AnchorPoint = Vector2.new(0.5, 0.6)
+bgImage.Position = UDim2.fromScale(0.5, 0.6)
 bgImage.Size = UDim2.fromScale(1.05, 1.05)
 bgImage.BackgroundTransparency = 1
-bgImage.Image = "rbxassetid://104755616433087"
+bgImage.Image = "rbxassetid://12661151025"
 bgImage.ScaleType = Enum.ScaleType.Crop
 bgImage.BorderSizePixel = 0
 bgImage.ZIndex = 0
@@ -224,12 +224,12 @@ colorShiftGrad.Color = ColorSequence.new({
 colorShiftGrad.Rotation = 90
 colorShiftGrad.Parent = colorShift
 
--- Pulsing horizon glow
+-- Pulsing horizon glow (repositioned for this image; adjust Y if horizon sits elsewhere)
 local horizonGlow = Instance.new("Frame")
 horizonGlow.Name = "HorizonGlow"
 horizonGlow.AnchorPoint = Vector2.new(0.5, 0.5)
-horizonGlow.Position = UDim2.fromScale(0.5, 0.78)
-horizonGlow.Size = UDim2.new(1.4, 0, 0, 180)
+horizonGlow.Position = UDim2.fromScale(0.5, 0.72)
+horizonGlow.Size = UDim2.new(1.4, 0, 0, 170)
 horizonGlow.BackgroundColor3 = Color3.fromRGB(255, 160, 80)
 horizonGlow.BackgroundTransparency = 0.55
 horizonGlow.BorderSizePixel = 0
@@ -272,9 +272,9 @@ task.spawn(function()
 		-- pulsing horizon glow
 		local pulse = (math.sin(t * 1.1) + 1) / 2
 		horizonGlow.BackgroundTransparency = 0.62 - pulse * 0.18
-		horizonGlow.Size = UDim2.new(1.4, 0, 0, 170 + pulse * 28)
+		horizonGlow.Size = UDim2.new(1.4, 0, 0, 160 + pulse * 28)
 		horizonGrad.Offset = Vector2.new(math.sin(t * 0.35) * 0.06, 0)
-		horizonGlow.Position = UDim2.new(0.5, 0, 0.78, math.sin(t * 0.5) * 4)
+		horizonGlow.Position = UDim2.new(0.5, 0, 0.72, math.sin(t * 0.5) * 4)
 
 		task.wait(0.03)
 	end
