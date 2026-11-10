@@ -190,40 +190,79 @@ local bg = Instance.new("Frame")
 bg.Name = "Background"
 bg.Size = UDim2.fromScale(1, 1)
 bg.BackgroundColor3 = Color3.fromRGB(10, 6, 20)
+bg.BackgroundTransparency = 0
+bg.ZIndex = 0
 bg.BorderSizePixel = 0
 bg.Parent = menuGui
 
 local gradient = Instance.new("UIGradient")
 gradient.Color = ColorSequence.new({
 	ColorSequenceKeypoint.new(0, Color3.fromRGB(8, 10, 40)), -- deep night blue
-	ColorSequenceKeypoint.new(0.28, Color3.fromRGB(60, 0, 90)), -- purple
-	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 0, 128)), -- neon magenta
-	ColorSequenceKeypoint.new(0.72, Color3.fromRGB(255, 90, 20)), -- neon orange
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 200, 60)), -- sunset gold
+	ColorSequenceKeypoint.new(0.22, Color3.fromRGB(70, 0, 120)), -- purple
+	ColorSequenceKeypoint.new(0.45, Color3.fromRGB(255, 0, 140)), -- neon magenta
+	ColorSequenceKeypoint.new(0.68, Color3.fromRGB(255, 90, 20)), -- neon orange
+	ColorSequenceKeypoint.new(0.85, Color3.fromRGB(255, 200, 70)), -- sunset gold
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 10, 50)), -- deep horizon
 })
 gradient.Rotation = 90
-gradient.Offset = Vector2.new(0, -0.15)
+gradient.Offset = Vector2.new(0, -0.25)
 gradient.Parent = bg
 
--- Gentle looping motion (shift + slow rotation) for an animated neon-sunset feel.
+local glow = Instance.new("Frame")
+glow.Name = "Glow"
+glow.Size = UDim2.fromScale(1, 1)
+glow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+glow.BackgroundTransparency = 0
+glow.ZIndex = 0
+glow.BorderSizePixel = 0
+glow.Parent = bg
+
+local glowGradient = Instance.new("UIGradient")
+glowGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 60, 180)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 140, 40)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 0, 255)),
+})
+glowGradient.Transparency = NumberSequence.new({
+	NumberSequenceKeypoint.new(0, 0.65),
+	NumberSequenceKeypoint.new(0.5, 0.35),
+	NumberSequenceKeypoint.new(1, 0.65),
+})
+glowGradient.Rotation = 45
+glowGradient.Offset = Vector2.new(-0.2, 0)
+glowGradient.Parent = glow
+
+-- Looping motion (shift + slow rotation) for an animated neon-sunset feel.
 task.spawn(function()
 	local shiftA = TweenService:Create(
 		gradient,
-		TweenInfo.new(6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-		{ Offset = Vector2.new(0, 0.15), Rotation = 100 }
+		TweenInfo.new(5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+		{ Offset = Vector2.new(0, 0.25), Rotation = 105 }
 	)
 	local shiftB = TweenService:Create(
 		gradient,
-		TweenInfo.new(6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-		{ Offset = Vector2.new(0, -0.15), Rotation = 80 }
+		TweenInfo.new(5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+		{ Offset = Vector2.new(0, -0.25), Rotation = 75 }
+	)
+	local glowA = TweenService:Create(
+		glowGradient,
+		TweenInfo.new(7, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+		{ Offset = Vector2.new(0.2, 0.1), Rotation = 60 }
+	)
+	local glowB = TweenService:Create(
+		glowGradient,
+		TweenInfo.new(7, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+		{ Offset = Vector2.new(-0.2, -0.1), Rotation = 30 }
 	)
 	while menuGui.Parent do
 		shiftA:Play()
+		glowA:Play()
 		shiftA.Completed:Wait()
 		if not menuGui.Parent then
 			break
 		end
 		shiftB:Play()
+		glowB:Play()
 		shiftB.Completed:Wait()
 	end
 end)
@@ -232,7 +271,7 @@ local overlay = Instance.new("Frame")
 overlay.Name = "Overlay"
 overlay.Size = UDim2.fromScale(1, 1)
 overlay.BackgroundColor3 = COLORS.Overlay
-overlay.BackgroundTransparency = 0.4
+overlay.BackgroundTransparency = 0.35
 overlay.BorderSizePixel = 0
 overlay.Parent = bg
 

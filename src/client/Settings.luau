@@ -441,15 +441,15 @@ function Settings.mount(container: Frame, onBack: () -> (), onRefresh: (() -> ()
 			end,
 		},
 		{
-			id = "Keybinds",
-			label = "Keybinds",
+			id = "Controls",
+			label = "Controls",
 			accent = COLORS.Keybinds,
 			build = function(parent)
 				local sec = makeSection(
 					"Keybinds",
 					"Keybinds",
 					COLORS.Keybinds,
-					120,
+					130,
 					parent,
 					function()
 						Settings.state.sprintKey = DEFAULTS.sprintKey
@@ -460,13 +460,13 @@ function Settings.mount(container: Frame, onBack: () -> (), onRefresh: (() -> ()
 						end
 					end
 				)
-				sec.Size = UDim2.new(1, 0, 0, 120)
+				sec.Size = UDim2.new(1, 0, 0, 130)
 				makeKeybindRow("Sprint key", 30, function()
 					return Settings.state.sprintKey
 				end, function(k)
 					Settings.state.sprintKey = k
 				end, sec)
-				makeKeybindRow("Unlock mouse", 56, function()
+				makeKeybindRow("Unlock mouse", 62, function()
 					return Settings.state.mouseUnlockKey
 				end, function(k)
 					Settings.state.mouseUnlockKey = k
