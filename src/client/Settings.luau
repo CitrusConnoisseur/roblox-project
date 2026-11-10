@@ -28,6 +28,8 @@ Settings.state = {
 	fasterGraphics = DEFAULTS.fasterGraphics,
 }
 
+Settings.selectedTab = "Misc"
+
 function Settings.reset(): ()
 	Settings.state.sprintKey = DEFAULTS.sprintKey
 	Settings.state.sprintToggle = DEFAULTS.sprintToggle
@@ -45,11 +47,16 @@ local COLORS = {
 	Muted = Color3.fromRGB(130, 136, 156),
 	Back = Color3.fromRGB(90, 96, 120),
 	BackText = Color3.fromRGB(240, 242, 248),
+	Reset = Color3.fromRGB(220, 70, 70),
+	ResetText = Color3.fromRGB(255, 255, 255),
 	Keybinds = Color3.fromRGB(255, 179, 71),
 	Graphics = Color3.fromRGB(86, 204, 242),
 	Audio = Color3.fromRGB(167, 139, 250),
 	Misc = Color3.fromRGB(244, 114, 182),
 	Divider = Color3.fromRGB(58, 62, 82),
+	Tab = Color3.fromRGB(55, 58, 78),
+	TabActiveText = Color3.fromRGB(255, 255, 255),
+	TabInactiveText = Color3.fromRGB(170, 176, 196),
 	On = Color3.fromRGB(72, 199, 142),
 	Off = Color3.fromRGB(95, 99, 112),
 	BarBg = Color3.fromRGB(55, 58, 75),
@@ -173,10 +180,10 @@ local function makeSection(
 		resetBtn.AnchorPoint = Vector2.new(1, 1)
 		resetBtn.Position = UDim2.new(1, -10, 1, -8)
 		resetBtn.Size = UDim2.fromOffset(100, 22)
-		resetBtn.BackgroundColor3 = COLORS.Back
+		resetBtn.BackgroundColor3 = COLORS.Reset
 		resetBtn.BorderSizePixel = 0
 		resetBtn.Text = "Reset defaults"
-		resetBtn.TextColor3 = COLORS.BackText
+		resetBtn.TextColor3 = COLORS.ResetText
 		resetBtn.TextScaled = true
 		resetBtn.Font = Enum.Font.Gotham
 		resetBtn.Parent = section
@@ -337,17 +344,16 @@ local function makeKeybindRow(label: string, y: number, parent: Instance): ()
 end
 
 -- Build settings content into `container` (a Frame). Returns Back button.
+-- Tabbed sections (defaults to Misc). `Settings.selectedTab` persists across remounts.
 function Settings.mount(container: Frame, onBack: () -> (), onRefresh: (() -> ())?): TextButton
 	for _, c in container:GetChildren() do
-		if not c:IsA("UIListLayout") and not c:IsA("UIPadding") then
-			c:Destroy()
-		end
+		c:Destroy()
 	end
 
 	local header = Instance.new("TextLabel")
 	header.BackgroundTransparency = 1
 	header.Position = UDim2.fromOffset(0, 0)
-	header.Size = UDim2.new(1, -90, 0, 34)
+	header.Size = UDim2.new(1, -90, 0, 30)
 	header.TextXAlignment = Enum.TextXAlignment.Left
 	header.Text = "Settings"
 	header.TextColor3 = COLORS.Text
@@ -357,8 +363,8 @@ function Settings.mount(container: Frame, onBack: () -> (), onRefresh: (() -> ()
 
 	local back = Instance.new("TextButton")
 	back.Name = "BackButton"
-	back.Size = UDim2.fromOffset(76, 30)
-	back.Position = UDim2.new(1, -76, 0, 2)
+	back.Size = UDim2.fromOffset(76, 28)
+	back.Position = UDim2.new(1, -76, 0, 1)
 	back.BackgroundColor3 = COLORS.Back
 	back.BorderSizePixel = 0
 	back.Text = "Back"
@@ -369,92 +375,203 @@ function Settings.mount(container: Frame, onBack: () -> (), onRefresh: (() -> ()
 	makeCorner(back, 6)
 	back.Activated:Connect(onBack)
 
+	-- Section header tabs
+	local tabBar = Instance.new("Frame")
+	tabBar.Name = "TabBar"
+	tabBar.BackgroundTransparency = 1
+	tabBar.Position = UDim2.fromOffset(0, 34)
+	tabBar.Size = UDim2.new(1, 0, 0, 30)
+	tabBar.Parent = container
+
+	local tabLayout = Instance.new("UIListLayout")
+	tabLayout.FillDirection = Enum.FillDirection.Horizontal
+	tabLayout.Padding = UDim.new(0, 6)
+	tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	tabLayout.Parent = tabBar
+
 	local divider = Instance.new("Frame")
-	divider.Position = UDim2.fromOffset(0, 38)
+	divider.Position = UDim2.fromOffset(0, 68)
 	divider.Size = UDim2.new(1, 0, 0, 2)
 	divider.BackgroundColor3 = COLORS.Divider
 	divider.BorderSizePixel = 0
 	divider.Parent = container
 
-	local body = Instance.new("ScrollingFrame")
+	local body = Instance.new("Frame")
 	body.Name = "Body"
-	body.Position = UDim2.fromOffset(0, 46)
-	body.Size = UDim2.new(1, 0, 1, -46)
+	body.Position = UDim2.fromOffset(0, 76)
+	body.Size = UDim2.new(1, 0, 1, -76)
 	body.BackgroundTransparency = 1
-	body.BorderSizePixel = 0
-	body.ScrollBarThickness = 6
-	body.CanvasSize = UDim2.new(0, 0, 0, 0)
-	body.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	body.Parent = container
 
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 8)
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Parent = body
+	type SectionDef = {
+		id: string,
+		label: string,
+		accent: Color3,
+		build: (Frame) -> (),
+	}
+	local sections: { SectionDef } = {
+		{
+			id = "Misc",
+			label = "Misc",
+			accent = COLORS.Misc,
+			build = function(parent)
+				local sec = makeSection("Misc", "Miscellaneous", COLORS.Misc, 94, parent, function()
+					Settings.state.sprintToggle = DEFAULTS.sprintToggle
+					Settings.apply()
+					if onRefresh then
+						onRefresh()
+					end
+				end)
+				sec.Size = UDim2.new(1, 0, 0, 94)
+				makeToggleRow("Sprint toggle", 30, function()
+					return Settings.state.sprintToggle
+				end, function(v)
+					Settings.state.sprintToggle = v
+				end, sec)
+			end,
+		},
+		{
+			id = "Keybinds",
+			label = "Keybinds",
+			accent = COLORS.Keybinds,
+			build = function(parent)
+				local sec = makeSection(
+					"Keybinds",
+					"Keybinds",
+					COLORS.Keybinds,
+					94,
+					parent,
+					function()
+						Settings.state.sprintKey = DEFAULTS.sprintKey
+						Settings.apply()
+						if onRefresh then
+							onRefresh()
+						end
+					end
+				)
+				sec.Size = UDim2.new(1, 0, 0, 94)
+				makeKeybindRow("Sprint key", 30, sec)
+			end,
+		},
+		{
+			id = "Audio",
+			label = "Audio",
+			accent = COLORS.Audio,
+			build = function(parent)
+				local sec = makeSection("Audio", "Audio", COLORS.Audio, 136, parent, function()
+					Settings.state.musicVolume = DEFAULTS.musicVolume
+					Settings.state.sfxVolume = DEFAULTS.sfxVolume
+					Settings.state.ambienceVolume = DEFAULTS.ambienceVolume
+					Settings.apply()
+					if onRefresh then
+						onRefresh()
+					end
+				end)
+				sec.Size = UDim2.new(1, 0, 0, 136)
+				makeSliderRow("Music volume", 30, function()
+					return Settings.state.musicVolume
+				end, function(v)
+					Settings.state.musicVolume = v
+				end, sec)
+				makeSliderRow("Sound effects volume", 56, function()
+					return Settings.state.sfxVolume
+				end, function(v)
+					Settings.state.sfxVolume = v
+				end, sec)
+				makeSliderRow("Ambience volume", 82, function()
+					return Settings.state.ambienceVolume
+				end, function(v)
+					Settings.state.ambienceVolume = v
+				end, sec)
+			end,
+		},
+		{
+			id = "Graphics",
+			label = "Graphics",
+			accent = COLORS.Graphics,
+			build = function(parent)
+				local sec = makeSection(
+					"Graphics",
+					"Graphics",
+					COLORS.Graphics,
+					94,
+					parent,
+					function()
+						Settings.state.fasterGraphics = DEFAULTS.fasterGraphics
+						Settings.apply()
+						if onRefresh then
+							onRefresh()
+						end
+					end
+				)
+				sec.Size = UDim2.new(1, 0, 0, 94)
+				makeToggleRow("Faster graphics (weak hardware)", 30, function()
+					return Settings.state.fasterGraphics
+				end, function(v)
+					Settings.state.fasterGraphics = v
+				end, sec)
+			end,
+		},
+	}
 
-	local keybinds = makeSection("Keybinds", "Keybinds", COLORS.Keybinds, 94, body, function()
-		Settings.state.sprintKey = DEFAULTS.sprintKey
-		Settings.apply()
-		if onRefresh then
-			onRefresh()
-		end
-	end)
-	keybinds.LayoutOrder = 1
-	makeKeybindRow("Sprint key", 30, keybinds)
+	local tabButtons: { [string]: TextButton } = {}
+	local panes: { [string]: Frame } = {}
 
-	local misc = makeSection("Misc", "Miscellaneous", COLORS.Misc, 94, body, function()
-		Settings.state.sprintToggle = DEFAULTS.sprintToggle
-		Settings.apply()
-		if onRefresh then
-			onRefresh()
+	local function selectTab(id: string): ()
+		Settings.selectedTab = id
+		for sid, pane in panes do
+			pane.Visible = sid == id
 		end
-	end)
-	misc.LayoutOrder = 2
-	makeToggleRow("Sprint toggle", 30, function()
-		return Settings.state.sprintToggle
-	end, function(v)
-		Settings.state.sprintToggle = v
-	end, misc)
+		for sid, btn in tabButtons do
+			local def = nil
+			for _, s in sections do
+				if s.id == sid then
+					def = s
+					break
+				end
+			end
+			local accent = if def then def.accent else COLORS.BarFill
+			local active = sid == id
+			btn.BackgroundColor3 = if active then accent else COLORS.Tab
+			btn.TextColor3 = if active then COLORS.TabActiveText else COLORS.TabInactiveText
+		end
+	end
 
-	local audio = makeSection("Audio", "Audio", COLORS.Audio, 136, body, function()
-		Settings.state.musicVolume = DEFAULTS.musicVolume
-		Settings.state.sfxVolume = DEFAULTS.sfxVolume
-		Settings.state.ambienceVolume = DEFAULTS.ambienceVolume
-		Settings.apply()
-		if onRefresh then
-			onRefresh()
-		end
-	end)
-	audio.LayoutOrder = 3
-	makeSliderRow("Music volume", 30, function()
-		return Settings.state.musicVolume
-	end, function(v)
-		Settings.state.musicVolume = v
-	end, audio)
-	makeSliderRow("Sound effects volume", 56, function()
-		return Settings.state.sfxVolume
-	end, function(v)
-		Settings.state.sfxVolume = v
-	end, audio)
-	makeSliderRow("Ambience volume", 82, function()
-		return Settings.state.ambienceVolume
-	end, function(v)
-		Settings.state.ambienceVolume = v
-	end, audio)
+	for i, def in sections do
+		local pane = Instance.new("Frame")
+		pane.Name = def.id .. "Pane"
+		pane.BackgroundTransparency = 1
+		pane.Size = UDim2.fromScale(1, 1)
+		pane.Visible = false
+		pane.Parent = body
+		panes[def.id] = pane
+		def.build(pane)
 
-	local graphics = makeSection("Graphics", "Graphics", COLORS.Graphics, 94, body, function()
-		Settings.state.fasterGraphics = DEFAULTS.fasterGraphics
-		Settings.apply()
-		if onRefresh then
-			onRefresh()
-		end
-	end)
-	graphics.LayoutOrder = 4
-	makeToggleRow("Faster graphics (weak hardware)", 30, function()
-		return Settings.state.fasterGraphics
-	end, function(v)
-		Settings.state.fasterGraphics = v
-	end, graphics)
+		local btn = Instance.new("TextButton")
+		btn.Name = def.id .. "Tab"
+		btn.LayoutOrder = i
+		btn.Size = UDim2.fromOffset(96, 28)
+		btn.BackgroundColor3 = COLORS.Tab
+		btn.BorderSizePixel = 0
+		btn.AutoButtonColor = true
+		btn.Text = def.label
+		btn.TextColor3 = COLORS.TabInactiveText
+		btn.TextScaled = true
+		btn.Font = Enum.Font.GothamBold
+		btn.Parent = tabBar
+		makeCorner(btn, 6)
+		tabButtons[def.id] = btn
+		btn.Activated:Connect(function()
+			selectTab(def.id)
+		end)
+	end
+
+	-- default to Misc (or last selected tab if still valid)
+	if panes[Settings.selectedTab] then
+		selectTab(Settings.selectedTab)
+	else
+		selectTab("Misc")
+	end
 
 	return back
 end

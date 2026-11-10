@@ -2,6 +2,11 @@
   "name": "roblox-project",
   "tree": {
     "$className": "DataModel",
+    "ReplicatedFirst": {
+      "Client": {
+        "$path": "src/first"
+      }
+    },
     "ReplicatedStorage": {
       "Shared": {
         "$path": "src/shared"

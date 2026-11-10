@@ -258,3 +258,12 @@ end)
 
 Settings.apply()
 setModal(true) -- lock camera while start menu is shown
+
+-- Signal priority loading screen that the menu is ready (skip becomes available).
+do
+	local ReplicatedFirst = game:GetService("ReplicatedFirst")
+	local readyEvent = ReplicatedFirst:FindFirstChild("MenuReady")
+	if readyEvent and readyEvent:IsA("BindableEvent") then
+		readyEvent:Fire()
+	end
+end
