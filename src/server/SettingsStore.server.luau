@@ -44,6 +44,10 @@ saveSettings.OnServerEvent:Connect(function(player: Player, data: unknown)
 		mouseUnlockKey = if type(payload.mouseUnlockKey) == "string"
 			then payload.mouseUnlockKey
 			else "LeftAlt",
+		slideKey = if type(payload.slideKey) == "string" then payload.slideKey else "C",
+		wallJumpKey = if type(payload.wallJumpKey) == "string"
+			then payload.wallJumpKey
+			else "Space",
 		sprintToggle = payload.sprintToggle == true,
 		musicVolume = if type(payload.musicVolume) == "number" then payload.musicVolume else 0.5,
 		sfxVolume = if type(payload.sfxVolume) == "number" then payload.sfxVolume else 0.5,

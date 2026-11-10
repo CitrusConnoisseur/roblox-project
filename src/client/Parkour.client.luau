@@ -9,6 +9,7 @@ local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Settings = require(script.Parent:WaitForChild("Settings"))
 
 local player = Players.LocalPlayer
 
@@ -20,6 +21,7 @@ local canDoubleJump = false
 local hasDoubleJumped = false
 local sliding = false
 local lastSlideEnd = 0
+local slideDirection = Vector3.zero
 
 local function movementLocked(): boolean
 	return player:GetAttribute("MenuMovementLocked") == true
@@ -218,6 +220,7 @@ local function startSlide()
 	dir = dir.Unit
 
 	sliding = true
+	slideDirection = dir
 	hum.AutoRotate = false
 
 	local startTime = os.clock()
@@ -230,7 +233,7 @@ local function startSlide()
 				break
 			end
 			-- keep sliding forward along ground
-			local flatVel = dir * Config.SLIDE_SPEED
+			local flatVel = slideDirection * Config.SLIDE_SPEED
 			r.AssemblyLinearVelocity = Vector3.new(flatVel.X, r.AssemblyLinearVelocity.Y, flatVel.Z)
 			RunService.Heartbeat:Wait()
 		end
@@ -238,7 +241,70 @@ local function startSlide()
 	end)
 end
 
-local function onJumpRequest()
+local function trySlideJump(): boolean
+	local hum = humanoid
+	local r = root
+	if not hum or not r then
+		return false
+	end
+	if not sliding then
+		return false
+	end
+	-- Jump out of slide with preserved/boosted forward momentum.
+	local dir = slideDirection
+	if dir.Magnitude < 0.1 then
+		dir = getMoveDirection()
+	end
+	if dir.Magnitude < 0.1 then
+		local look = r.CFrame.LookVector
+		dir = Vector3.new(look.X, 0, look.Z)
+	end
+	if dir.Magnitude > 0 then
+		dir = dir.Unit
+	else
+		dir = Vector3.zero
+	end
+
+	sliding = false
+	lastSlideEnd = os.clock()
+	hum.AutoRotate = true
+	hum:ChangeState(Enum.HumanoidStateType.Jumping)
+
+	local horizontalSpeed = Config.SLIDE_SPEED + Config.SLIDE_JUMP_BOOST
+	r.AssemblyLinearVelocity =
+		Vector3.new(dir.X * horizontalSpeed, Config.SLIDE_JUMP_POWER, dir.Z * horizontalSpeed)
+	canDoubleJump = true
+	hasDoubleJumped = false
+	return true
+end
+
+local function tryWallJump(): boolean
+	local hum = humanoid
+	local r = root
+	local char = character
+	if not hum or not r or not char then
+		return false
+	end
+	if isGrounded(hum) then
+		return false
+	end
+	local wallNormal = findWall()
+	if not wallNormal then
+		return false
+	end
+	local away = Vector3.new(wallNormal.X, 0, wallNormal.Z)
+	if away.Magnitude > 0 then
+		away = away.Unit
+	end
+	local vel = away * Config.WALL_JUMP_PUSH + Vector3.new(0, Config.WALL_JUMP_POWER, 0)
+	r.AssemblyLinearVelocity = vel
+	hum:ChangeState(Enum.HumanoidStateType.Jumping)
+	canDoubleJump = true
+	hasDoubleJumped = false
+	return true
+end
+
+local function onJumpAction(allowWallJump: boolean)
 	local hum = humanoid
 	local r = root
 	local char = character
@@ -249,6 +315,13 @@ local function onJumpRequest()
 		return
 	end
 
+	-- Slide-jump momentum: jump while sliding
+	if sliding then
+		if trySlideJump() then
+			return
+		end
+	end
+
 	-- Try mantle first when moving into a ledge
 	if tryMantle() then
 		canDoubleJump = true
@@ -256,20 +329,10 @@ local function onJumpRequest()
 		return
 	end
 
-	-- Wall jump when airborne and near a wall
+	-- Air actions
 	if not isGrounded(hum) then
-		local wallNormal = findWall()
-		if wallNormal and hasDoubleJumped == false then
-			-- allow wall jump (and refresh double jump feel)
-			local away = Vector3.new(wallNormal.X, 0, wallNormal.Z)
-			if away.Magnitude > 0 then
-				away = away.Unit
-			end
-			local vel = away * Config.WALL_JUMP_PUSH + Vector3.new(0, Config.WALL_JUMP_POWER, 0)
-			r.AssemblyLinearVelocity = vel
-			hum:ChangeState(Enum.HumanoidStateType.Jumping)
-			canDoubleJump = true
-			hasDoubleJumped = false
+		-- Wall jump (when allowed for this input)
+		if allowWallJump and tryWallJump() then
 			return
 		end
 
@@ -332,6 +395,22 @@ if player.Character then
 end
 player.CharacterAdded:Connect(bindCharacter)
 
+local function getSlideKey(): Enum.KeyCode
+	local s = (Settings :: any).state
+	if s and typeof(s.slideKey) == "EnumItem" then
+		return s.slideKey
+	end
+	return Enum.KeyCode.C
+end
+
+local function getWallJumpKey(): Enum.KeyCode
+	local s = (Settings :: any).state
+	if s and typeof(s.wallJumpKey) == "EnumItem" then
+		return s.wallJumpKey
+	end
+	return Enum.KeyCode.Space
+end
+
 UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
 	if processed then
 		return
@@ -342,13 +421,23 @@ UserInputService.InputBegan:Connect(function(input: InputObject, processed: bool
 	if movementLocked() then
 		return
 	end
-	if input.KeyCode == Config.SLIDE_KEY then
+	if input.KeyCode == getSlideKey() then
 		startSlide()
+		return
+	end
+	-- Rebindable wall jump key: handle here when not Space (Space is handled via JumpRequest).
+	local wj = getWallJumpKey()
+	if input.KeyCode == wj and wj ~= Enum.KeyCode.Space then
+		if tryWallJump() then
+			return
+		end
 	end
 end)
 
 UserInputService.JumpRequest:Connect(function()
-	onJumpRequest()
+	-- Allow wall jump via jump request only when wall-jump key is bound to Space (default).
+	local allowWallJump = getWallJumpKey() == Enum.KeyCode.Space
+	onJumpAction(allowWallJump)
 end)
 
 -- Stop slide if movement lock engages mid-slide

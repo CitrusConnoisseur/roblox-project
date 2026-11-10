@@ -13,6 +13,8 @@ local Settings = {}
 local DEFAULTS = table.freeze({
 	sprintKey = Enum.KeyCode.LeftShift,
 	mouseUnlockKey = Enum.KeyCode.LeftAlt,
+	slideKey = Enum.KeyCode.C,
+	wallJumpKey = Enum.KeyCode.Space,
 	sprintToggle = false,
 	musicVolume = 0.5,
 	sfxVolume = 0.5,
@@ -23,6 +25,8 @@ local DEFAULTS = table.freeze({
 Settings.state = {
 	sprintKey = DEFAULTS.sprintKey,
 	mouseUnlockKey = DEFAULTS.mouseUnlockKey,
+	slideKey = DEFAULTS.slideKey,
+	wallJumpKey = DEFAULTS.wallJumpKey,
 	sprintToggle = DEFAULTS.sprintToggle,
 	musicVolume = DEFAULTS.musicVolume,
 	sfxVolume = DEFAULTS.sfxVolume,
@@ -35,6 +39,8 @@ Settings.selectedTab = "Misc"
 function Settings.reset(): ()
 	Settings.state.sprintKey = DEFAULTS.sprintKey
 	Settings.state.mouseUnlockKey = DEFAULTS.mouseUnlockKey
+	Settings.state.slideKey = DEFAULTS.slideKey
+	Settings.state.wallJumpKey = DEFAULTS.wallJumpKey
 	Settings.state.sprintToggle = DEFAULTS.sprintToggle
 	Settings.state.musicVolume = DEFAULTS.musicVolume
 	Settings.state.sfxVolume = DEFAULTS.sfxVolume
@@ -100,6 +106,8 @@ local function queueSave(): ()
 			saveRemote:FireServer({
 				sprintKey = Settings.state.sprintKey.Name,
 				mouseUnlockKey = Settings.state.mouseUnlockKey.Name,
+				slideKey = Settings.state.slideKey.Name,
+				wallJumpKey = Settings.state.wallJumpKey.Name,
 				sprintToggle = Settings.state.sprintToggle,
 				musicVolume = Settings.state.musicVolume,
 				sfxVolume = Settings.state.sfxVolume,
@@ -497,18 +505,20 @@ function Settings.mount(container: Frame, onBack: () -> (), onRefresh: (() -> ()
 					"Keybinds",
 					"Keybinds",
 					COLORS.Keybinds,
-					156,
+					220,
 					parent,
 					function()
 						Settings.state.sprintKey = DEFAULTS.sprintKey
 						Settings.state.mouseUnlockKey = DEFAULTS.mouseUnlockKey
+						Settings.state.slideKey = DEFAULTS.slideKey
+						Settings.state.wallJumpKey = DEFAULTS.wallJumpKey
 						Settings.apply()
 						if onRefresh then
 							onRefresh()
 						end
 					end
 				)
-				sec.Size = UDim2.new(1, 0, 0, 156)
+				sec.Size = UDim2.new(1, 0, 0, 220)
 				makeKeybindRow("Sprint key", 30, function()
 					return Settings.state.sprintKey
 				end, function(k)
@@ -518,6 +528,16 @@ function Settings.mount(container: Frame, onBack: () -> (), onRefresh: (() -> ()
 					return Settings.state.mouseUnlockKey
 				end, function(k)
 					Settings.state.mouseUnlockKey = k
+				end, sec)
+				makeKeybindRow("Slide", 94, function()
+					return Settings.state.slideKey
+				end, function(k)
+					Settings.state.slideKey = k
+				end, sec)
+				makeKeybindRow("Wall jump", 126, function()
+					return Settings.state.wallJumpKey
+				end, function(k)
+					Settings.state.wallJumpKey = k
 				end, sec)
 			end,
 		},
@@ -685,6 +705,22 @@ do
 					end)
 					if ok4 and typeof(kc) == "EnumItem" then
 						Settings.state.mouseUnlockKey = kc :: Enum.KeyCode
+					end
+				end
+				if type(d.slideKey) == "string" then
+					local ok5, kc = pcall(function()
+						return (Enum.KeyCode :: any)[d.slideKey]
+					end)
+					if ok5 and typeof(kc) == "EnumItem" then
+						Settings.state.slideKey = kc :: Enum.KeyCode
+					end
+				end
+				if type(d.wallJumpKey) == "string" then
+					local ok6, kc = pcall(function()
+						return (Enum.KeyCode :: any)[d.wallJumpKey]
+					end)
+					if ok6 and typeof(kc) == "EnumItem" then
+						Settings.state.wallJumpKey = kc :: Enum.KeyCode
 					end
 				end
 				if type(d.sprintToggle) == "boolean" then
