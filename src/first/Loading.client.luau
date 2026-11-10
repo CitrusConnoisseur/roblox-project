@@ -19,15 +19,15 @@ local player = Players.LocalPlayer or Players.PlayerAdded:Wait()
 local playerGui = player:WaitForChild("PlayerGui")
 
 local COLORS = {
-	Bg = Color3.fromRGB(12, 12, 18),
-	Panel = Color3.fromRGB(32, 34, 48),
-	Text = Color3.fromRGB(240, 242, 248),
-	SubText = Color3.fromRGB(170, 176, 196),
-	Skip = Color3.fromRGB(88, 101, 242),
-	SkipText = Color3.fromRGB(255, 255, 255),
-	SkipDisabled = Color3.fromRGB(70, 74, 92),
-	SkipDisabledText = Color3.fromRGB(140, 145, 165),
-	Accent = Color3.fromRGB(72, 199, 142),
+	Bg = Color3.fromRGB(12, 8, 20),
+	Panel = Color3.fromRGB(20, 12, 30),
+	Text = Color3.fromRGB(255, 236, 248),
+	SubText = Color3.fromRGB(214, 178, 224),
+	Skip = Color3.fromRGB(255, 90, 160),
+	SkipText = Color3.fromRGB(255, 245, 250),
+	SkipDisabled = Color3.fromRGB(70, 50, 85),
+	SkipDisabledText = Color3.fromRGB(170, 140, 185),
+	Accent = Color3.fromRGB(255, 160, 90),
 }
 
 local function makeCorner(parent: Instance, radius: number): ()
@@ -56,10 +56,16 @@ panel.Name = "Panel"
 panel.AnchorPoint = Vector2.new(0.5, 0.5)
 panel.Position = UDim2.fromScale(0.5, 0.5)
 panel.Size = UDim2.fromOffset(420, 200)
-panel.BackgroundColor3 = COLORS.Panel
+panel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+panel.BackgroundTransparency = 0.45
 panel.BorderSizePixel = 0
 panel.Parent = bg
 makeCorner(panel, 14)
+local panelStroke = Instance.new("UIStroke")
+panelStroke.Color = Color3.fromRGB(40, 15, 55)
+panelStroke.Thickness = 2
+panelStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+panelStroke.Parent = panel
 
 local title = Instance.new("TextLabel")
 title.BackgroundTransparency = 1
@@ -85,7 +91,7 @@ status.Parent = panel
 local barBg = Instance.new("Frame")
 barBg.Position = UDim2.fromOffset(24, 104)
 barBg.Size = UDim2.new(1, -48, 0, 8)
-barBg.BackgroundColor3 = Color3.fromRGB(55, 58, 75)
+barBg.BackgroundColor3 = Color3.fromRGB(55, 35, 70)
 barBg.BorderSizePixel = 0
 barBg.Parent = panel
 makeCorner(barBg, 4)
@@ -147,7 +153,7 @@ local function enableSkip(): ()
 		return
 	end
 	ready = true
-	status.Text = "Menu ready. You can skip loading."
+	status.Text = "Menu ready."
 	barFill:TweenSize(
 		UDim2.fromScale(1, 1),
 		Enum.EasingDirection.Out,
@@ -157,9 +163,15 @@ local function enableSkip(): ()
 	)
 	skipButton.BackgroundColor3 = COLORS.Skip
 	skipButton.TextColor3 = COLORS.SkipText
-	skipButton.Text = "Skip"
+	skipButton.Text = "Continue"
 	skipButton.AutoButtonColor = true
 	skipButton.Active = true
+	-- Automatically go to the menu once fully finished loading.
+	task.delay(0.15, function()
+		if gui.Parent then
+			gui:Destroy()
+		end
+	end)
 end
 
 menuReady.Event:Connect(enableSkip)

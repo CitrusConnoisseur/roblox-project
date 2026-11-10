@@ -69,22 +69,22 @@ UserInputService.InputBegan:Connect(function(input: InputObject, processed: bool
 end)
 
 local COLORS = {
-	BgImageTint = Color3.fromRGB(15, 15, 22),
-	Overlay = Color3.fromRGB(10, 10, 16),
+	BgImageTint = Color3.fromRGB(15, 8, 22),
+	Overlay = Color3.fromRGB(12, 6, 18),
 	Panel = Color3.fromRGB(0, 0, 0),
 	PanelTransparency = 0.45,
-	PanelOutline = Color3.fromRGB(0, 0, 0),
+	PanelOutline = Color3.fromRGB(30, 10, 40),
 	PanelOutlineThickness = 2,
-	Text = Color3.fromRGB(240, 242, 248),
-	SubText = Color3.fromRGB(170, 176, 196),
-	Play = Color3.fromRGB(72, 199, 142),
-	PlayText = Color3.fromRGB(255, 255, 255),
-	SettingsBtn = Color3.fromRGB(88, 101, 242),
-	SettingsBtnText = Color3.fromRGB(255, 255, 255),
+	Text = Color3.fromRGB(255, 236, 248),
+	SubText = Color3.fromRGB(220, 185, 230),
+	Play = Color3.fromRGB(255, 90, 170),
+	PlayText = Color3.fromRGB(255, 245, 250),
+	SettingsBtn = Color3.fromRGB(170, 90, 255),
+	SettingsBtnText = Color3.fromRGB(255, 240, 250),
 	Icon = Color3.fromRGB(0, 0, 0),
 	IconTransparency = 0.45,
-	IconOutline = Color3.fromRGB(0, 0, 0),
-	IconText = Color3.fromRGB(240, 242, 248),
+	IconOutline = Color3.fromRGB(40, 15, 55),
+	IconText = Color3.fromRGB(255, 200, 230),
 }
 
 local function makeCorner(parent: Instance, radius: number): ()

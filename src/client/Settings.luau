@@ -44,27 +44,27 @@ function Settings.reset(): ()
 end
 
 local COLORS = {
-	Panel = Color3.fromRGB(32, 34, 48),
-	PanelAlt = Color3.fromRGB(40, 43, 60),
-	Text = Color3.fromRGB(240, 242, 248),
-	Muted = Color3.fromRGB(130, 136, 156),
-	Back = Color3.fromRGB(90, 96, 120),
-	BackText = Color3.fromRGB(240, 242, 248),
-	Reset = Color3.fromRGB(220, 70, 70),
-	ResetText = Color3.fromRGB(255, 255, 255),
-	Keybinds = Color3.fromRGB(255, 179, 71),
-	Graphics = Color3.fromRGB(86, 204, 242),
-	Audio = Color3.fromRGB(167, 139, 250),
-	Misc = Color3.fromRGB(244, 114, 182),
-	Divider = Color3.fromRGB(58, 62, 82),
-	Tab = Color3.fromRGB(55, 58, 78),
-	TabActiveText = Color3.fromRGB(255, 255, 255),
-	TabInactiveText = Color3.fromRGB(255, 255, 255),
-	On = Color3.fromRGB(72, 199, 142),
-	Off = Color3.fromRGB(95, 99, 112),
-	BarBg = Color3.fromRGB(55, 58, 75),
-	BarFill = Color3.fromRGB(88, 101, 242),
-	Capture = Color3.fromRGB(234, 179, 8),
+	Panel = Color3.fromRGB(24, 14, 34),
+	PanelAlt = Color3.fromRGB(34, 20, 46),
+	Text = Color3.fromRGB(255, 236, 248),
+	Muted = Color3.fromRGB(200, 170, 210),
+	Back = Color3.fromRGB(120, 70, 150),
+	BackText = Color3.fromRGB(255, 240, 250),
+	Reset = Color3.fromRGB(230, 70, 110),
+	ResetText = Color3.fromRGB(255, 245, 250),
+	Keybinds = Color3.fromRGB(255, 170, 80), -- Controls accent (warm gold)
+	Graphics = Color3.fromRGB(255, 130, 90), -- warm coral (color-coded)
+	Audio = Color3.fromRGB(190, 120, 255), -- violet/purple
+	Misc = Color3.fromRGB(255, 100, 180), -- hot pink
+	Divider = Color3.fromRGB(90, 55, 110),
+	Tab = Color3.fromRGB(55, 35, 70),
+	TabActiveText = Color3.fromRGB(255, 245, 250),
+	TabInactiveText = Color3.fromRGB(255, 225, 240),
+	On = Color3.fromRGB(255, 160, 90), -- warm on
+	Off = Color3.fromRGB(95, 70, 110), -- muted purple off
+	BarBg = Color3.fromRGB(55, 35, 70),
+	BarFill = Color3.fromRGB(255, 110, 170), -- warm pink/magenta fill
+	Capture = Color3.fromRGB(255, 200, 90), -- warm capture highlight
 }
 
 local listeningForKey: ((Enum.KeyCode) -> ())? = nil
@@ -419,8 +419,8 @@ function Settings.mount(container: Frame, onBack: () -> (), onRefresh: (() -> ()
 	scrollTrack.AnchorPoint = Vector2.new(1, 0)
 	scrollTrack.Position = UDim2.fromScale(1, 0)
 	scrollTrack.Size = UDim2.new(0, 12, 1, 0)
-	scrollTrack.BackgroundColor3 = Color3.fromRGB(20, 22, 32)
-	scrollTrack.BackgroundTransparency = 0.35
+	scrollTrack.BackgroundColor3 = Color3.fromRGB(30, 16, 42)
+	scrollTrack.BackgroundTransparency = 0.25
 	scrollTrack.BorderSizePixel = 0
 	scrollTrack.Parent = scrollArea
 	makeCorner(scrollTrack, 6)
@@ -440,8 +440,8 @@ function Settings.mount(container: Frame, onBack: () -> (), onRefresh: (() -> ()
 	body.BackgroundTransparency = 1
 	body.BorderSizePixel = 0
 	body.ScrollBarThickness = 8
-	body.ScrollBarImageColor3 = Color3.fromRGB(140, 145, 170)
-	body.ScrollBarImageTransparency = 0.1
+	body.ScrollBarImageColor3 = Color3.fromRGB(220, 150, 255)
+	body.ScrollBarImageTransparency = 0.05
 	body.ScrollingDirection = Enum.ScrollingDirection.Y
 	body.CanvasSize = UDim2.new(0, 0, 0, 0)
 	body.AutomaticCanvasSize = Enum.AutomaticSize.Y
