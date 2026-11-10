@@ -2,7 +2,6 @@
 -- Start-up menu + in-game settings icon. Settings UI comes from Settings module.
 
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
@@ -185,85 +184,103 @@ menuGui.DisplayOrder = 10
 menuGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 menuGui.Parent = playerGui
 
--- Animated neon-sunset background (start menu only). Replaced with a static image/VideoFrame if desired.
+-- Animated neon-sunset background (start menu only). Placeholder-style synthwave attempt.
 local bg = Instance.new("Frame")
 bg.Name = "Background"
 bg.Size = UDim2.fromScale(1, 1)
-bg.BackgroundColor3 = Color3.fromRGB(10, 6, 20)
-bg.BackgroundTransparency = 0
-bg.ZIndex = 0
+bg.BackgroundColor3 = Color3.fromRGB(8, 5, 20)
 bg.BorderSizePixel = 0
 bg.Parent = menuGui
 
-local gradient = Instance.new("UIGradient")
-gradient.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(8, 10, 40)), -- deep night blue
-	ColorSequenceKeypoint.new(0.22, Color3.fromRGB(70, 0, 120)), -- purple
-	ColorSequenceKeypoint.new(0.45, Color3.fromRGB(255, 0, 140)), -- neon magenta
-	ColorSequenceKeypoint.new(0.68, Color3.fromRGB(255, 90, 20)), -- neon orange
-	ColorSequenceKeypoint.new(0.85, Color3.fromRGB(255, 200, 70)), -- sunset gold
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 10, 50)), -- deep horizon
-})
-gradient.Rotation = 90
-gradient.Offset = Vector2.new(0, -0.25)
-gradient.Parent = bg
+local sky = Instance.new("Frame")
+sky.Name = "Sky"
+sky.Size = UDim2.fromScale(1, 1)
+sky.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+sky.BorderSizePixel = 0
+sky.Parent = bg
 
-local glow = Instance.new("Frame")
-glow.Name = "Glow"
-glow.Size = UDim2.fromScale(1, 1)
-glow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-glow.BackgroundTransparency = 0
-glow.ZIndex = 0
-glow.BorderSizePixel = 0
-glow.Parent = bg
-
-local glowGradient = Instance.new("UIGradient")
-glowGradient.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 60, 180)),
-	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 140, 40)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 0, 255)),
+local skyGradient = Instance.new("UIGradient")
+skyGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(5, 2, 20)), -- night
+	ColorSequenceKeypoint.new(0.35, Color3.fromRGB(25, 0, 60)), -- deep purple
+	ColorSequenceKeypoint.new(0.6, Color3.fromRGB(90, 0, 120)), -- magenta purple
+	ColorSequenceKeypoint.new(0.8, Color3.fromRGB(180, 40, 120)), -- horizon pink
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 5, 35)), -- lower dark
 })
-glowGradient.Transparency = NumberSequence.new({
-	NumberSequenceKeypoint.new(0, 0.65),
-	NumberSequenceKeypoint.new(0.5, 0.35),
-	NumberSequenceKeypoint.new(1, 0.65),
-})
-glowGradient.Rotation = 45
-glowGradient.Offset = Vector2.new(-0.2, 0)
-glowGradient.Parent = glow
+skyGradient.Rotation = 90
+skyGradient.Parent = sky
 
--- Looping motion (shift + slow rotation) for an animated neon-sunset feel.
+-- Neon sun (retro/synthwave style) near horizon
+local sun = Instance.new("Frame")
+sun.Name = "NeonSun"
+sun.AnchorPoint = Vector2.new(0.5, 0.5)
+sun.Position = UDim2.fromScale(0.5, 0.72)
+sun.Size = UDim2.fromOffset(360, 360)
+sun.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+sun.BorderSizePixel = 0
+sun.Parent = bg
+local sunCorner = Instance.new("UICorner")
+sunCorner.CornerRadius = UDim.new(1, 0)
+sunCorner.Parent = sun
+
+local sunGradient = Instance.new("UIGradient")
+sunGradient.Rotation = 90
+sunGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 245, 120)), -- bright top
+	ColorSequenceKeypoint.new(0.45, Color3.fromRGB(255, 160, 40)), -- orange
+	ColorSequenceKeypoint.new(0.75, Color3.fromRGB(255, 0, 140)), -- neon pink
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(140, 0, 255)), -- purple bottom
+})
+sunGradient.Parent = sun
+
+-- Horizontal stripes across lower sun for retro "neon sun" look
+local stripeRatios = { 0.52, 0.60, 0.67, 0.73, 0.785, 0.835, 0.88, 0.92 }
+local stripeHeights = { 0.018, 0.022, 0.028, 0.034, 0.042, 0.05, 0.06, 0.07 }
+for i, y in stripeRatios do
+	local stripe = Instance.new("Frame")
+	stripe.Name = "Stripe" .. i
+	stripe.BackgroundColor3 = Color3.fromRGB(8, 5, 20)
+	stripe.BackgroundTransparency = 0.05
+	stripe.BorderSizePixel = 0
+	stripe.Position = UDim2.fromScale(0, y)
+	stripe.Size = UDim2.fromScale(1, stripeHeights[i] or 0.03)
+	stripe.ZIndex = 2
+	stripe.Parent = sun
+end
+
+-- Horizon glow band
+local horizonGlow = Instance.new("Frame")
+horizonGlow.Name = "HorizonGlow"
+horizonGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+horizonGlow.Position = UDim2.fromScale(0.5, 0.78)
+horizonGlow.Size = UDim2.new(1.2, 0, 0, 140)
+horizonGlow.BackgroundColor3 = Color3.fromRGB(255, 80, 180)
+horizonGlow.BackgroundTransparency = 0.35
+horizonGlow.BorderSizePixel = 0
+horizonGlow.ZIndex = 3
+horizonGlow.Parent = bg
+local horizonCorner = Instance.new("UICorner")
+horizonCorner.CornerRadius = UDim.new(1, 0)
+horizonCorner.Parent = horizonGlow
+local horizonGrad = Instance.new("UIGradient")
+horizonGrad.Transparency = NumberSequence.new({
+	NumberSequenceKeypoint.new(0, 1),
+	NumberSequenceKeypoint.new(0.5, 0.2),
+	NumberSequenceKeypoint.new(1, 1),
+})
+horizonGrad.Rotation = 90
+horizonGrad.Parent = horizonGlow
+
+-- Subtle animation (sky/sun glow pulse). Placeholder motion.
 task.spawn(function()
-	local shiftA = TweenService:Create(
-		gradient,
-		TweenInfo.new(5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-		{ Offset = Vector2.new(0, 0.25), Rotation = 105 }
-	)
-	local shiftB = TweenService:Create(
-		gradient,
-		TweenInfo.new(5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-		{ Offset = Vector2.new(0, -0.25), Rotation = 75 }
-	)
-	local glowA = TweenService:Create(
-		glowGradient,
-		TweenInfo.new(7, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-		{ Offset = Vector2.new(0.2, 0.1), Rotation = 60 }
-	)
-	local glowB = TweenService:Create(
-		glowGradient,
-		TweenInfo.new(7, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-		{ Offset = Vector2.new(-0.2, -0.1), Rotation = 30 }
-	)
+	local t = 0
 	while menuGui.Parent do
-		shiftA:Play()
-		glowA:Play()
-		shiftA.Completed:Wait()
-		if not menuGui.Parent then
-			break
-		end
-		shiftB:Play()
-		glowB:Play()
-		shiftB.Completed:Wait()
+		t += 0.03
+		local pulse = 0.3 + (math.sin(t) * 0.08)
+		horizonGlow.BackgroundTransparency = pulse
+		sunGradient.Offset = Vector2.new(0, math.sin(t * 0.7) * 0.03)
+		skyGradient.Offset = Vector2.new(0, math.sin(t * 0.25) * 0.02)
+		task.wait(0.03)
 	end
 end)
 

@@ -181,17 +181,17 @@ local function makeSection(
 	if onReset then
 		local resetBtn = Instance.new("TextButton")
 		resetBtn.Name = "ResetSection"
-		resetBtn.AnchorPoint = Vector2.new(1, 1)
-		resetBtn.Position = UDim2.new(1, -10, 1, -8)
-		resetBtn.Size = UDim2.fromOffset(100, 22)
+		resetBtn.AnchorPoint = Vector2.new(0.5, 1)
+		resetBtn.Position = UDim2.new(0.5, 0, 1, -10)
+		resetBtn.Size = UDim2.fromOffset(150, 30)
 		resetBtn.BackgroundColor3 = COLORS.Reset
 		resetBtn.BorderSizePixel = 0
 		resetBtn.Text = "Reset defaults"
 		resetBtn.TextColor3 = COLORS.ResetText
 		resetBtn.TextScaled = true
-		resetBtn.Font = Enum.Font.Gotham
+		resetBtn.Font = Enum.Font.GothamBold
 		resetBtn.Parent = section
-		makeCorner(resetBtn, 6)
+		makeCorner(resetBtn, 8)
 		resetBtn.Activated:Connect(onReset)
 	end
 
@@ -406,12 +406,53 @@ function Settings.mount(container: Frame, onBack: () -> (), onRefresh: (() -> ()
 	divider.BorderSizePixel = 0
 	divider.Parent = container
 
-	local body = Instance.new("Frame")
+	-- Scroll area (starts at top of settings content below tabs) with segmented scrollbar track
+	local scrollArea = Instance.new("Frame")
+	scrollArea.Name = "ScrollArea"
+	scrollArea.Position = UDim2.fromOffset(0, 76)
+	scrollArea.Size = UDim2.new(1, 0, 1, -76)
+	scrollArea.BackgroundTransparency = 1
+	scrollArea.Parent = container
+
+	local scrollTrack = Instance.new("Frame")
+	scrollTrack.Name = "ScrollTrack"
+	scrollTrack.AnchorPoint = Vector2.new(1, 0)
+	scrollTrack.Position = UDim2.fromScale(1, 0)
+	scrollTrack.Size = UDim2.new(0, 12, 1, 0)
+	scrollTrack.BackgroundColor3 = Color3.fromRGB(20, 22, 32)
+	scrollTrack.BackgroundTransparency = 0.35
+	scrollTrack.BorderSizePixel = 0
+	scrollTrack.Parent = scrollArea
+	makeCorner(scrollTrack, 6)
+
+	local trackLine = Instance.new("Frame")
+	trackLine.Name = "TrackLine"
+	trackLine.Position = UDim2.fromOffset(0, 0)
+	trackLine.Size = UDim2.new(0, 2, 1, 0)
+	trackLine.BackgroundColor3 = COLORS.Divider
+	trackLine.BorderSizePixel = 0
+	trackLine.Parent = scrollTrack
+
+	local body = Instance.new("ScrollingFrame")
 	body.Name = "Body"
-	body.Position = UDim2.fromOffset(0, 76)
-	body.Size = UDim2.new(1, 0, 1, -76)
+	body.Position = UDim2.fromOffset(0, 0)
+	body.Size = UDim2.new(1, -14, 1, 0)
 	body.BackgroundTransparency = 1
-	body.Parent = container
+	body.BorderSizePixel = 0
+	body.ScrollBarThickness = 8
+	body.ScrollBarImageColor3 = Color3.fromRGB(140, 145, 170)
+	body.ScrollBarImageTransparency = 0.1
+	body.ScrollingDirection = Enum.ScrollingDirection.Y
+	body.CanvasSize = UDim2.new(0, 0, 0, 0)
+	body.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	body.ScrollingEnabled = true
+	body.Parent = scrollArea
+
+	local bodyPadding = Instance.new("UIPadding")
+	bodyPadding.PaddingTop = UDim.new(0, 0)
+	bodyPadding.PaddingBottom = UDim.new(0, 4)
+	bodyPadding.PaddingRight = UDim.new(0, 4)
+	bodyPadding.Parent = body
 
 	type SectionDef = {
 		id: string,
@@ -425,14 +466,21 @@ function Settings.mount(container: Frame, onBack: () -> (), onRefresh: (() -> ()
 			label = "Misc",
 			accent = COLORS.Misc,
 			build = function(parent)
-				local sec = makeSection("Misc", "Miscellaneous", COLORS.Misc, 94, parent, function()
-					Settings.state.sprintToggle = DEFAULTS.sprintToggle
-					Settings.apply()
-					if onRefresh then
-						onRefresh()
+				local sec = makeSection(
+					"Misc",
+					"Miscellaneous",
+					COLORS.Misc,
+					124,
+					parent,
+					function()
+						Settings.state.sprintToggle = DEFAULTS.sprintToggle
+						Settings.apply()
+						if onRefresh then
+							onRefresh()
+						end
 					end
-				end)
-				sec.Size = UDim2.new(1, 0, 0, 94)
+				)
+				sec.Size = UDim2.new(1, 0, 0, 124)
 				makeToggleRow("Sprint toggle", 30, function()
 					return Settings.state.sprintToggle
 				end, function(v)
@@ -449,7 +497,7 @@ function Settings.mount(container: Frame, onBack: () -> (), onRefresh: (() -> ()
 					"Keybinds",
 					"Keybinds",
 					COLORS.Keybinds,
-					130,
+					156,
 					parent,
 					function()
 						Settings.state.sprintKey = DEFAULTS.sprintKey
@@ -460,7 +508,7 @@ function Settings.mount(container: Frame, onBack: () -> (), onRefresh: (() -> ()
 						end
 					end
 				)
-				sec.Size = UDim2.new(1, 0, 0, 130)
+				sec.Size = UDim2.new(1, 0, 0, 156)
 				makeKeybindRow("Sprint key", 30, function()
 					return Settings.state.sprintKey
 				end, function(k)
@@ -478,7 +526,7 @@ function Settings.mount(container: Frame, onBack: () -> (), onRefresh: (() -> ()
 			label = "Audio",
 			accent = COLORS.Audio,
 			build = function(parent)
-				local sec = makeSection("Audio", "Audio", COLORS.Audio, 136, parent, function()
+				local sec = makeSection("Audio", "Audio", COLORS.Audio, 170, parent, function()
 					Settings.state.musicVolume = DEFAULTS.musicVolume
 					Settings.state.sfxVolume = DEFAULTS.sfxVolume
 					Settings.state.ambienceVolume = DEFAULTS.ambienceVolume
@@ -487,7 +535,7 @@ function Settings.mount(container: Frame, onBack: () -> (), onRefresh: (() -> ()
 						onRefresh()
 					end
 				end)
-				sec.Size = UDim2.new(1, 0, 0, 136)
+				sec.Size = UDim2.new(1, 0, 0, 170)
 				makeSliderRow("Music volume", 30, function()
 					return Settings.state.musicVolume
 				end, function(v)
@@ -514,7 +562,7 @@ function Settings.mount(container: Frame, onBack: () -> (), onRefresh: (() -> ()
 					"Graphics",
 					"Graphics",
 					COLORS.Graphics,
-					94,
+					124,
 					parent,
 					function()
 						Settings.state.fasterGraphics = DEFAULTS.fasterGraphics
@@ -524,7 +572,7 @@ function Settings.mount(container: Frame, onBack: () -> (), onRefresh: (() -> ()
 						end
 					end
 				)
-				sec.Size = UDim2.new(1, 0, 0, 94)
+				sec.Size = UDim2.new(1, 0, 0, 124)
 				makeToggleRow("Faster graphics (weak hardware)", 30, function()
 					return Settings.state.fasterGraphics
 				end, function(v)
@@ -540,7 +588,15 @@ function Settings.mount(container: Frame, onBack: () -> (), onRefresh: (() -> ()
 	local function selectTab(id: string): ()
 		Settings.selectedTab = id
 		for sid, pane in panes do
-			pane.Visible = sid == id
+			local active = sid == id
+			pane.Visible = active
+			if active then
+				pane.AutomaticSize = Enum.AutomaticSize.Y
+				pane.Size = UDim2.fromScale(1, 0)
+			else
+				pane.AutomaticSize = Enum.AutomaticSize.None
+				pane.Size = UDim2.fromScale(1, 0)
+			end
 		end
 		for sid, btn in tabButtons do
 			local def = nil
@@ -555,13 +611,15 @@ function Settings.mount(container: Frame, onBack: () -> (), onRefresh: (() -> ()
 			btn.BackgroundColor3 = if active then accent else COLORS.Tab
 			btn.TextColor3 = if active then COLORS.TabActiveText else COLORS.TabInactiveText
 		end
+		body.CanvasPosition = Vector2.new(0, 0)
 	end
 
 	for i, def in sections do
 		local pane = Instance.new("Frame")
 		pane.Name = def.id .. "Pane"
 		pane.BackgroundTransparency = 1
-		pane.Size = UDim2.fromScale(1, 1)
+		pane.Size = UDim2.fromScale(1, 0)
+		pane.AutomaticSize = Enum.AutomaticSize.Y
 		pane.Visible = false
 		pane.Parent = body
 		panes[def.id] = pane
