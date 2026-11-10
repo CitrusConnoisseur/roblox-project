@@ -11,17 +11,32 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 local modalCount = 0
+local manualMouseUnlocked = false
+
+local function applyMouseMode(): ()
+	if modalCount > 0 then
+		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+		UserInputService.MouseIconEnabled = true
+		return
+	end
+	if manualMouseUnlocked then
+		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+		UserInputService.MouseIconEnabled = true
+	else
+		UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+		UserInputService.MouseIconEnabled = false
+	end
+end
 
 local function setModal(open: boolean): ()
 	local camera = Workspace.CurrentCamera
 	if open then
 		modalCount += 1
 		player:SetAttribute("MenuMovementLocked", true)
-		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-		UserInputService.MouseIconEnabled = true
 		if camera then
 			camera.CameraType = Enum.CameraType.Scriptable
 		end
+		applyMouseMode()
 	else
 		modalCount = math.max(modalCount - 1, 0)
 		if modalCount == 0 then
@@ -30,11 +45,28 @@ local function setModal(open: boolean): ()
 			if cam then
 				cam.CameraType = Enum.CameraType.Custom
 			end
-			UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
-			UserInputService.MouseIconEnabled = false
 		end
+		applyMouseMode()
 	end
 end
+
+-- Toggle mouse lock/unlock in gameplay (keybind configurable in Settings).
+UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
+	if processed then
+		return
+	end
+	if input.UserInputType ~= Enum.UserInputType.Keyboard then
+		return
+	end
+	if input.KeyCode ~= Settings.state.mouseUnlockKey then
+		return
+	end
+	if modalCount > 0 then
+		return -- menus already control the mouse
+	end
+	manualMouseUnlocked = not manualMouseUnlocked
+	applyMouseMode()
+end)
 
 local COLORS = {
 	BgImageTint = Color3.fromRGB(15, 15, 22),

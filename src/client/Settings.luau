@@ -12,6 +12,7 @@ local Settings = {}
 -- ===== state =====
 local DEFAULTS = table.freeze({
 	sprintKey = Enum.KeyCode.LeftShift,
+	mouseUnlockKey = Enum.KeyCode.LeftAlt,
 	sprintToggle = false,
 	musicVolume = 0.5,
 	sfxVolume = 0.5,
@@ -21,6 +22,7 @@ local DEFAULTS = table.freeze({
 
 Settings.state = {
 	sprintKey = DEFAULTS.sprintKey,
+	mouseUnlockKey = DEFAULTS.mouseUnlockKey,
 	sprintToggle = DEFAULTS.sprintToggle,
 	musicVolume = DEFAULTS.musicVolume,
 	sfxVolume = DEFAULTS.sfxVolume,
@@ -32,6 +34,7 @@ Settings.selectedTab = "Misc"
 
 function Settings.reset(): ()
 	Settings.state.sprintKey = DEFAULTS.sprintKey
+	Settings.state.mouseUnlockKey = DEFAULTS.mouseUnlockKey
 	Settings.state.sprintToggle = DEFAULTS.sprintToggle
 	Settings.state.musicVolume = DEFAULTS.musicVolume
 	Settings.state.sfxVolume = DEFAULTS.sfxVolume
@@ -96,6 +99,7 @@ local function queueSave(): ()
 		if saveRemote then
 			saveRemote:FireServer({
 				sprintKey = Settings.state.sprintKey.Name,
+				mouseUnlockKey = Settings.state.mouseUnlockKey.Name,
 				sprintToggle = Settings.state.sprintToggle,
 				musicVolume = Settings.state.musicVolume,
 				sfxVolume = Settings.state.sfxVolume,
@@ -307,7 +311,13 @@ local function makeSliderRow(
 	end)
 end
 
-local function makeKeybindRow(label: string, y: number, parent: Instance): ()
+local function makeKeybindRow(
+	label: string,
+	y: number,
+	get: () -> Enum.KeyCode,
+	set: (Enum.KeyCode) -> (),
+	parent: Instance
+): ()
 	local lbl = Instance.new("TextLabel")
 	lbl.BackgroundTransparency = 1
 	lbl.Position = UDim2.fromOffset(22, y)
@@ -327,7 +337,7 @@ local function makeKeybindRow(label: string, y: number, parent: Instance): ()
 	btn.TextColor3 = COLORS.Text
 	btn.TextScaled = true
 	btn.Font = Enum.Font.GothamBold
-	btn.Text = Settings.state.sprintKey.Name
+	btn.Text = get().Name
 	btn.Parent = parent
 	makeCorner(btn, 6)
 
@@ -335,7 +345,7 @@ local function makeKeybindRow(label: string, y: number, parent: Instance): ()
 		btn.Text = "Press a key..."
 		btn.BackgroundColor3 = COLORS.Capture
 		listeningForKey = function(key: Enum.KeyCode)
-			Settings.state.sprintKey = key
+			set(key)
 			btn.Text = key.Name
 			btn.BackgroundColor3 = COLORS.BarBg
 			Settings.apply()
@@ -439,18 +449,28 @@ function Settings.mount(container: Frame, onBack: () -> (), onRefresh: (() -> ()
 					"Keybinds",
 					"Keybinds",
 					COLORS.Keybinds,
-					94,
+					120,
 					parent,
 					function()
 						Settings.state.sprintKey = DEFAULTS.sprintKey
+						Settings.state.mouseUnlockKey = DEFAULTS.mouseUnlockKey
 						Settings.apply()
 						if onRefresh then
 							onRefresh()
 						end
 					end
 				)
-				sec.Size = UDim2.new(1, 0, 0, 94)
-				makeKeybindRow("Sprint key", 30, sec)
+				sec.Size = UDim2.new(1, 0, 0, 120)
+				makeKeybindRow("Sprint key", 30, function()
+					return Settings.state.sprintKey
+				end, function(k)
+					Settings.state.sprintKey = k
+				end, sec)
+				makeKeybindRow("Unlock mouse", 56, function()
+					return Settings.state.mouseUnlockKey
+				end, function(k)
+					Settings.state.mouseUnlockKey = k
+				end, sec)
 			end,
 		},
 		{
@@ -599,6 +619,14 @@ do
 					end)
 					if ok3 and typeof(kc) == "EnumItem" then
 						Settings.state.sprintKey = kc :: Enum.KeyCode
+					end
+				end
+				if type(d.mouseUnlockKey) == "string" then
+					local ok4, kc = pcall(function()
+						return (Enum.KeyCode :: any)[d.mouseUnlockKey]
+					end)
+					if ok4 and typeof(kc) == "EnumItem" then
+						Settings.state.mouseUnlockKey = kc :: Enum.KeyCode
 					end
 				end
 				if type(d.sprintToggle) == "boolean" then

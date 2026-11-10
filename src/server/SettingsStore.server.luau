@@ -41,6 +41,9 @@ saveSettings.OnServerEvent:Connect(function(player: Player, data: unknown)
 	-- keep only expected fields (simple validation/sanitizing)
 	local clean = {
 		sprintKey = if type(payload.sprintKey) == "string" then payload.sprintKey else "LeftShift",
+		mouseUnlockKey = if type(payload.mouseUnlockKey) == "string"
+			then payload.mouseUnlockKey
+			else "LeftAlt",
 		sprintToggle = payload.sprintToggle == true,
 		musicVolume = if type(payload.musicVolume) == "number" then payload.musicVolume else 0.5,
 		sfxVolume = if type(payload.sfxVolume) == "number" then payload.sfxVolume else 0.5,
