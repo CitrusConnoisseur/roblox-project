@@ -24,6 +24,10 @@ local function movementLocked(): boolean
 	return player:GetAttribute("MenuMovementLocked") == true
 end
 
+local function isSliding(): boolean
+	return player:GetAttribute("Sliding") == true
+end
+
 local function applySprint(): ()
 	local humanoid = getHumanoid()
 	if not humanoid then
@@ -35,6 +39,10 @@ local function applySprint(): ()
 		return
 	end
 	humanoid.JumpPower = Config.JUMP_POWER
+	if isSliding() then
+		-- sliding controls movement; do not apply sprint speed
+		return
+	end
 	humanoid.WalkSpeed = if sprinting then Config.SPRINT_SPEED else Config.WALK_SPEED
 end
 
@@ -46,6 +54,13 @@ player:GetAttributeChangedSignal("MenuMovementLocked"):Connect(function()
 	applySprint()
 end)
 
+player:GetAttributeChangedSignal("Sliding"):Connect(function()
+	if isSliding() then
+		sprinting = false
+	end
+	applySprint()
+end)
+
 UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)
 	if processed then
 		return
@@ -54,6 +69,9 @@ UserInputService.InputBegan:Connect(function(input: InputObject, processed: bool
 		return
 	end
 	if input.KeyCode ~= Settings.state.sprintKey then
+		return
+	end
+	if isSliding() then
 		return
 	end
 	if Settings.state.sprintToggle then

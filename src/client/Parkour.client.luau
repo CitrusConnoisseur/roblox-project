@@ -160,26 +160,57 @@ local function tryMantle(): boolean
 		downHit.Position.Z
 	)
 	-- move slightly onto the ledge
-	targetPos += forward * 1.2
+	targetPos += forward * 1.1
 
-	hum:ChangeState(Enum.HumanoidStateType.Climbing)
-	r.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-	r.CFrame = CFrame.new(targetPos, targetPos + forward)
-	r.AssemblyLinearVelocity =
-		Vector3.new(forward.X * Config.MANTLE_BOOST, 6, forward.Z * Config.MANTLE_BOOST)
-	task.delay(0.15, function()
-		if humanoid == hum then
-			hum:ChangeState(Enum.HumanoidStateType.Running)
+	-- Smooth mantle/climb instead of instant teleport.
+	local startPos = r.Position
+	hum.AutoRotate = false
+	hum.PlatformStand = true
+	r.AssemblyLinearVelocity = Vector3.zero
+
+	task.spawn(function()
+		local duration = 0.28
+		local steps = 14
+		for i = 1, steps do
+			if character ~= char or humanoid ~= hum or root ~= r or movementLocked() then
+				break
+			end
+			local alpha = i / steps
+			-- ease out a bit and lift up then forward
+			local liftAlpha = math.clamp(alpha * 1.2, 0, 1)
+			local pos = startPos:Lerp(targetPos, liftAlpha)
+			pos = Vector3.new(pos.X, startPos.Y + (targetPos.Y - startPos.Y) * liftAlpha, pos.Z)
+			-- add a small forward carry near end
+			if alpha > 0.5 then
+				local forwardAlpha = (alpha - 0.5) / 0.5
+				pos += forward * (0.4 * forwardAlpha)
+			end
+			r.CFrame = CFrame.new(pos, pos + forward)
+			task.wait(duration / steps)
+		end
+		if character == char and humanoid == hum and root == r then
+			hum.PlatformStand = false
+			hum.AutoRotate = true
+			if not movementLocked() then
+				hum:ChangeState(Enum.HumanoidStateType.Running)
+				r.AssemblyLinearVelocity =
+					Vector3.new(forward.X * Config.MANTLE_BOOST, 2, forward.Z * Config.MANTLE_BOOST)
+			end
 		end
 	end)
 	return true
+end
+
+local function setSliding(active: boolean)
+	sliding = active
+	player:SetAttribute("Sliding", active)
 end
 
 local function endSlide()
 	if not sliding then
 		return
 	end
-	sliding = false
+	setSliding(false)
 	lastSlideEnd = os.clock()
 	local hum = humanoid
 	local r = root
@@ -219,7 +250,7 @@ local function startSlide()
 	end
 	dir = dir.Unit
 
-	sliding = true
+	setSliding(true)
 	slideDirection = dir
 	hum.AutoRotate = false
 
@@ -265,14 +296,28 @@ local function trySlideJump(): boolean
 		dir = Vector3.zero
 	end
 
-	sliding = false
+	setSliding(false)
 	lastSlideEnd = os.clock()
 	hum.AutoRotate = true
+	hum.Jump = false
 	hum:ChangeState(Enum.HumanoidStateType.Jumping)
 
 	local horizontalSpeed = Config.SLIDE_SPEED + Config.SLIDE_JUMP_BOOST
-	r.AssemblyLinearVelocity =
+	local launchVel =
 		Vector3.new(dir.X * horizontalSpeed, Config.SLIDE_JUMP_POWER, dir.Z * horizontalSpeed)
+	r.AssemblyLinearVelocity = launchVel
+	-- Reapply shortly after to override default humanoid jump impulse.
+	task.delay(0.05, function()
+		if root == r and humanoid == hum and not movementLocked() then
+			hum.Jump = false
+			r.AssemblyLinearVelocity = Vector3.new(
+				launchVel.X,
+				math.max(r.AssemblyLinearVelocity.Y, launchVel.Y),
+				launchVel.Z
+			)
+		end
+	end)
+
 	canDoubleJump = true
 	hasDoubleJumped = false
 	return true
@@ -354,8 +399,9 @@ local function bindCharacter(char: Model)
 	root = char:WaitForChild("HumanoidRootPart") :: BasePart
 	canDoubleJump = false
 	hasDoubleJumped = false
-	sliding = false
+	setSliding(false)
 	lastSlideEnd = 0
+	slideDirection = Vector3.zero
 
 	humanoid.StateChanged:Connect(function(_, newState)
 		if
@@ -394,6 +440,9 @@ if player.Character then
 	bindCharacter(player.Character)
 end
 player.CharacterAdded:Connect(bindCharacter)
+
+-- ensure attribute reflects state
+player:SetAttribute("Sliding", false)
 
 local function getSlideKey(): Enum.KeyCode
 	local s = (Settings :: any).state
