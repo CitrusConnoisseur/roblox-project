@@ -346,7 +346,17 @@ local function startSlide()
 			if not isGrounded(hum) then
 				break
 			end
-			-- keep sliding forward along ground
+			-- steer slide in the direction the player is facing/moving
+			local newDir = getMoveDirection()
+			if newDir.Magnitude > 0.1 then
+				slideDirection = newDir.Unit
+			else
+				local look = r.CFrame.LookVector
+				local flatLook = Vector3.new(look.X, 0, look.Z)
+				if flatLook.Magnitude > 0.1 then
+					slideDirection = flatLook.Unit
+				end
+			end
 			local flatVel = slideDirection * Config.SLIDE_SPEED
 			r.AssemblyLinearVelocity = Vector3.new(flatVel.X, r.AssemblyLinearVelocity.Y, flatVel.Z)
 			RunService.Heartbeat:Wait()
