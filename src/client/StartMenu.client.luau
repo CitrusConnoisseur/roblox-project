@@ -71,14 +71,19 @@ end)
 local COLORS = {
 	BgImageTint = Color3.fromRGB(15, 15, 22),
 	Overlay = Color3.fromRGB(10, 10, 16),
-	Panel = Color3.fromRGB(32, 34, 48),
+	Panel = Color3.fromRGB(0, 0, 0),
+	PanelTransparency = 0.45,
+	PanelOutline = Color3.fromRGB(0, 0, 0),
+	PanelOutlineThickness = 2,
 	Text = Color3.fromRGB(240, 242, 248),
 	SubText = Color3.fromRGB(170, 176, 196),
 	Play = Color3.fromRGB(72, 199, 142),
 	PlayText = Color3.fromRGB(255, 255, 255),
 	SettingsBtn = Color3.fromRGB(88, 101, 242),
 	SettingsBtnText = Color3.fromRGB(255, 255, 255),
-	Icon = Color3.fromRGB(45, 48, 66),
+	Icon = Color3.fromRGB(0, 0, 0),
+	IconTransparency = 0.45,
+	IconOutline = Color3.fromRGB(0, 0, 0),
 	IconText = Color3.fromRGB(240, 242, 248),
 }
 
@@ -86,6 +91,15 @@ local function makeCorner(parent: Instance, radius: number): ()
 	local c = Instance.new("UICorner")
 	c.CornerRadius = UDim.new(0, radius)
 	c.Parent = parent
+end
+
+local function addOutline(parent: Instance, color: Color3, thickness: number): UIStroke
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = color
+	stroke.Thickness = thickness
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Parent = parent
+	return stroke
 end
 
 -- ===== Persistent in-game HUD (settings icon) =====
@@ -103,6 +117,7 @@ iconButton.AnchorPoint = Vector2.new(1, 0)
 iconButton.Position = UDim2.new(1, -16, 0, 16)
 iconButton.Size = UDim2.fromOffset(44, 44)
 iconButton.BackgroundColor3 = COLORS.Icon
+iconButton.BackgroundTransparency = COLORS.IconTransparency
 iconButton.BorderSizePixel = 0
 iconButton.Text = "⚙"
 iconButton.TextColor3 = COLORS.IconText
@@ -111,6 +126,7 @@ iconButton.Font = Enum.Font.GothamBold
 iconButton.Visible = false -- shown after leaving the start menu
 iconButton.Parent = hudGui
 makeCorner(iconButton, 10)
+addOutline(iconButton, COLORS.IconOutline, 2)
 
 -- In-game settings overlay (transparent background)
 local ingameOverlay = Instance.new("Frame")
@@ -127,10 +143,11 @@ ingamePanel.AnchorPoint = Vector2.new(0.5, 0.5)
 ingamePanel.Position = UDim2.fromScale(0.5, 0.5)
 ingamePanel.Size = UDim2.fromOffset(640, 380)
 ingamePanel.BackgroundColor3 = COLORS.Panel
-ingamePanel.BackgroundTransparency = 0.08
+ingamePanel.BackgroundTransparency = COLORS.PanelTransparency
 ingamePanel.BorderSizePixel = 0
 ingamePanel.Parent = ingameOverlay
 makeCorner(ingamePanel, 14)
+addOutline(ingamePanel, COLORS.PanelOutline, COLORS.PanelOutlineThickness)
 
 local ingameContent = Instance.new("Frame")
 ingameContent.Name = "Content"
@@ -192,9 +209,11 @@ mainPanel.AnchorPoint = Vector2.new(0.5, 0.5)
 mainPanel.Position = UDim2.fromScale(0.5, 0.5)
 mainPanel.Size = UDim2.fromOffset(640, 380)
 mainPanel.BackgroundColor3 = COLORS.Panel
+mainPanel.BackgroundTransparency = COLORS.PanelTransparency
 mainPanel.BorderSizePixel = 0
 mainPanel.Parent = overlay
 makeCorner(mainPanel, 14)
+addOutline(mainPanel, COLORS.PanelOutline, COLORS.PanelOutlineThickness)
 
 local title = Instance.new("TextLabel")
 title.BackgroundTransparency = 1
@@ -253,10 +272,12 @@ menuSettingsPanel.AnchorPoint = Vector2.new(0.5, 0.5)
 menuSettingsPanel.Position = UDim2.fromScale(0.5, 0.5)
 menuSettingsPanel.Size = UDim2.fromOffset(640, 380)
 menuSettingsPanel.BackgroundColor3 = COLORS.Panel
+menuSettingsPanel.BackgroundTransparency = COLORS.PanelTransparency
 menuSettingsPanel.BorderSizePixel = 0
 menuSettingsPanel.Visible = false
 menuSettingsPanel.Parent = overlay
 makeCorner(menuSettingsPanel, 14)
+addOutline(menuSettingsPanel, COLORS.PanelOutline, COLORS.PanelOutlineThickness)
 
 local menuSettingsContent = Instance.new("Frame")
 menuSettingsContent.BackgroundTransparency = 1
