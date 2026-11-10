@@ -211,6 +211,33 @@ skyGradient.Rotation = 90
 skyGradient.Parent = sky
 
 -- Neon sun (retro/synthwave style) near horizon
+local sunGlow = Instance.new("Frame")
+sunGlow.Name = "SunGlow"
+sunGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+sunGlow.Position = UDim2.fromScale(0.5, 0.72)
+sunGlow.Size = UDim2.fromOffset(460, 460)
+sunGlow.BackgroundColor3 = Color3.fromRGB(255, 120, 60)
+sunGlow.BackgroundTransparency = 0.55
+sunGlow.BorderSizePixel = 0
+sunGlow.ZIndex = 1
+sunGlow.Parent = bg
+local sunGlowCorner = Instance.new("UICorner")
+sunGlowCorner.CornerRadius = UDim.new(1, 0)
+sunGlowCorner.Parent = sunGlow
+local sunGlowGrad = Instance.new("UIGradient")
+sunGlowGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 240, 120)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 80, 160)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 0, 255)),
+})
+sunGlowGrad.Transparency = NumberSequence.new({
+	NumberSequenceKeypoint.new(0, 0.2),
+	NumberSequenceKeypoint.new(0.6, 0.55),
+	NumberSequenceKeypoint.new(1, 1),
+})
+sunGlowGrad.Rotation = 90
+sunGlowGrad.Parent = sunGlow
+
 local sun = Instance.new("Frame")
 sun.Name = "NeonSun"
 sun.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -218,6 +245,8 @@ sun.Position = UDim2.fromScale(0.5, 0.72)
 sun.Size = UDim2.fromOffset(360, 360)
 sun.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 sun.BorderSizePixel = 0
+sun.ClipsDescendants = true -- keep stripes inside the sun
+sun.ZIndex = 2
 sun.Parent = bg
 local sunCorner = Instance.new("UICorner")
 sunCorner.CornerRadius = UDim.new(1, 0)
@@ -233,18 +262,18 @@ sunGradient.Color = ColorSequence.new({
 })
 sunGradient.Parent = sun
 
--- Horizontal stripes across lower sun for retro "neon sun" look
+-- Horizontal stripes across lower sun for retro "neon sun" look (clipped to sun)
 local stripeRatios = { 0.52, 0.60, 0.67, 0.73, 0.785, 0.835, 0.88, 0.92 }
 local stripeHeights = { 0.018, 0.022, 0.028, 0.034, 0.042, 0.05, 0.06, 0.07 }
 for i, y in stripeRatios do
 	local stripe = Instance.new("Frame")
 	stripe.Name = "Stripe" .. i
 	stripe.BackgroundColor3 = Color3.fromRGB(8, 5, 20)
-	stripe.BackgroundTransparency = 0.05
+	stripe.BackgroundTransparency = 0.02
 	stripe.BorderSizePixel = 0
 	stripe.Position = UDim2.fromScale(0, y)
 	stripe.Size = UDim2.fromScale(1, stripeHeights[i] or 0.03)
-	stripe.ZIndex = 2
+	stripe.ZIndex = 3
 	stripe.Parent = sun
 end
 
@@ -252,9 +281,9 @@ end
 local horizonGlow = Instance.new("Frame")
 horizonGlow.Name = "HorizonGlow"
 horizonGlow.AnchorPoint = Vector2.new(0.5, 0.5)
-horizonGlow.Position = UDim2.fromScale(0.5, 0.78)
-horizonGlow.Size = UDim2.new(1.2, 0, 0, 140)
-horizonGlow.BackgroundColor3 = Color3.fromRGB(255, 80, 180)
+horizonGlow.Position = UDim2.fromScale(0.5, 0.8)
+horizonGlow.Size = UDim2.new(1.4, 0, 0, 160)
+horizonGlow.BackgroundColor3 = Color3.fromRGB(255, 90, 180)
 horizonGlow.BackgroundTransparency = 0.35
 horizonGlow.BorderSizePixel = 0
 horizonGlow.ZIndex = 3
@@ -263,23 +292,101 @@ local horizonCorner = Instance.new("UICorner")
 horizonCorner.CornerRadius = UDim.new(1, 0)
 horizonCorner.Parent = horizonGlow
 local horizonGrad = Instance.new("UIGradient")
+horizonGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 120, 40)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 0, 160)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 0, 255)),
+})
 horizonGrad.Transparency = NumberSequence.new({
 	NumberSequenceKeypoint.new(0, 1),
-	NumberSequenceKeypoint.new(0.5, 0.2),
+	NumberSequenceKeypoint.new(0.5, 0.15),
 	NumberSequenceKeypoint.new(1, 1),
 })
 horizonGrad.Rotation = 90
 horizonGrad.Parent = horizonGlow
 
--- Subtle animation (sky/sun glow pulse). Placeholder motion.
+-- Flowing wave bands at bottom
+local wave1 = Instance.new("Frame")
+wave1.Name = "Wave1"
+wave1.AnchorPoint = Vector2.new(0.5, 0.5)
+wave1.Position = UDim2.fromScale(0.5, 0.9)
+wave1.Size = UDim2.new(1.4, 0, 0, 90)
+wave1.BackgroundColor3 = Color3.fromRGB(255, 0, 140)
+wave1.BackgroundTransparency = 0.7
+wave1.BorderSizePixel = 0
+wave1.ZIndex = 3
+wave1.Parent = bg
+local wave1Corner = Instance.new("UICorner")
+wave1Corner.CornerRadius = UDim.new(1, 0)
+wave1Corner.Parent = wave1
+local wave1Grad = Instance.new("UIGradient")
+wave1Grad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 170, 40)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 0, 160)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 0, 200)),
+})
+wave1Grad.Transparency = NumberSequence.new({
+	NumberSequenceKeypoint.new(0, 1),
+	NumberSequenceKeypoint.new(0.3, 0.4),
+	NumberSequenceKeypoint.new(0.7, 0.4),
+	NumberSequenceKeypoint.new(1, 1),
+})
+wave1Grad.Parent = wave1
+
+local wave2 = Instance.new("Frame")
+wave2.Name = "Wave2"
+wave2.AnchorPoint = Vector2.new(0.5, 0.5)
+wave2.Position = UDim2.fromScale(0.5, 0.97)
+wave2.Size = UDim2.new(1.5, 0, 0, 110)
+wave2.BackgroundColor3 = Color3.fromRGB(120, 0, 255)
+wave2.BackgroundTransparency = 0.75
+wave2.BorderSizePixel = 0
+wave2.ZIndex = 3
+wave2.Parent = bg
+local wave2Corner = Instance.new("UICorner")
+wave2Corner.CornerRadius = UDim.new(1, 0)
+wave2Corner.Parent = wave2
+local wave2Grad = Instance.new("UIGradient")
+wave2Grad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 80, 120)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(180, 0, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 0, 120)),
+})
+wave2Grad.Transparency = NumberSequence.new({
+	NumberSequenceKeypoint.new(0, 1),
+	NumberSequenceKeypoint.new(0.35, 0.45),
+	NumberSequenceKeypoint.new(0.65, 0.45),
+	NumberSequenceKeypoint.new(1, 1),
+})
+wave2Grad.Parent = wave2
+
+-- Animated sun radiation + flowing bottom waves.
 task.spawn(function()
 	local t = 0
 	while menuGui.Parent do
 		t += 0.03
-		local pulse = 0.3 + (math.sin(t) * 0.08)
-		horizonGlow.BackgroundTransparency = pulse
-		sunGradient.Offset = Vector2.new(0, math.sin(t * 0.7) * 0.03)
-		skyGradient.Offset = Vector2.new(0, math.sin(t * 0.25) * 0.02)
+		-- sun radiating light (pulsing glow)
+		local radiate = 0.5 + 0.5 * math.sin(t * 1.6)
+		local glowSize = 440 + radiate * 50
+		sunGlow.Size = UDim2.fromOffset(glowSize, glowSize)
+		sunGlow.BackgroundTransparency = 0.48 + (1 - radiate) * 0.12
+		sunGlowGrad.Offset = Vector2.new(0, math.sin(t * 0.9) * 0.06)
+
+		-- subtle sun shimmer
+		sunGradient.Offset = Vector2.new(0, math.sin(t * 0.7) * 0.04)
+		skyGradient.Offset = Vector2.new(0, math.sin(t * 0.18) * 0.03)
+
+		-- flowing horizon/waves
+		horizonGlow.BackgroundTransparency = 0.28 + math.sin(t * 1.1) * 0.08
+		horizonGrad.Offset = Vector2.new(math.sin(t * 0.8) * 0.18, 0)
+
+		wave1Grad.Offset = Vector2.new(math.sin(t * 1.3) * 0.35, 0)
+		wave1.Position = UDim2.new(0.5, math.sin(t * 0.9) * 18, 0.9, math.sin(t * 1.1) * 6)
+		wave1.BackgroundTransparency = 0.62 + math.sin(t * 1.4 + 0.5) * 0.08
+
+		wave2Grad.Offset = Vector2.new(math.sin(t * 1.0 + 1.2) * -0.4, 0)
+		wave2.Position = UDim2.new(0.5, math.sin(t * 0.7 + 1.0) * -22, 0.97, math.sin(t * 0.9) * 5)
+		wave2.BackgroundTransparency = 0.68 + math.sin(t * 1.2 + 1.0) * 0.08
 		task.wait(0.03)
 	end
 end)
