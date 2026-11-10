@@ -23,6 +23,11 @@ local sliding = false
 local lastSlideEnd = 0
 local slideDirection = Vector3.zero
 
+local ledgeGrabbing = false
+local ledgeHangPos = Vector3.zero
+local ledgeTopPos = Vector3.zero
+local ledgeForward = Vector3.zero
+
 local function movementLocked(): boolean
 	return player:GetAttribute("MenuMovementLocked") == true
 end
@@ -93,14 +98,119 @@ local function findWall(): Vector3?
 	return bestNormal
 end
 
-local function tryMantle(): boolean
+local function releaseLedge(drop: boolean)
+	if not ledgeGrabbing then
+		return
+	end
+	ledgeGrabbing = false
+	player:SetAttribute("LedgeGrabbing", false)
+	local hum = humanoid
+	local r = root
+	if hum and r then
+		hum.PlatformStand = false
+		hum.AutoRotate = true
+		if not movementLocked() then
+			if drop then
+				hum:ChangeState(Enum.HumanoidStateType.Freefall)
+			else
+				hum:ChangeState(Enum.HumanoidStateType.Running)
+			end
+		end
+	end
+end
+
+local function climbLedge()
+	if not ledgeGrabbing then
+		return
+	end
+	local hum = humanoid
+	local r = root
+	local char = character
+	if not hum or not r or not char then
+		releaseLedge(true)
+		return
+	end
+	-- Stop holding and climb up smoothly to top of ledge.
+	ledgeGrabbing = false
+	player:SetAttribute("LedgeGrabbing", false)
+
+	local startPos = r.Position
+	local targetPos = ledgeTopPos
+	local forward = ledgeForward
+	hum.AutoRotate = false
+	hum.PlatformStand = true
+	r.AssemblyLinearVelocity = Vector3.zero
+
+	task.spawn(function()
+		local duration = 0.3
+		local steps = 15
+		for i = 1, steps do
+			if character ~= char or humanoid ~= hum or root ~= r or movementLocked() then
+				break
+			end
+			local alpha = i / steps
+			-- lift up first, then move onto ledge
+			local liftAlpha = math.clamp(alpha * 1.3, 0, 1)
+			local pos = Vector3.new(
+				startPos.X + (targetPos.X - startPos.X) * math.clamp((alpha - 0.25) / 0.75, 0, 1),
+				startPos.Y + (targetPos.Y - startPos.Y) * liftAlpha,
+				startPos.Z + (targetPos.Z - startPos.Z) * math.clamp((alpha - 0.25) / 0.75, 0, 1)
+			)
+			r.CFrame = CFrame.new(pos, pos + forward)
+			task.wait(duration / steps)
+		end
+		if character == char and humanoid == hum and root == r then
+			hum.PlatformStand = false
+			hum.AutoRotate = true
+			if not movementLocked() then
+				hum:ChangeState(Enum.HumanoidStateType.Running)
+				r.AssemblyLinearVelocity =
+					Vector3.new(forward.X * Config.MANTLE_BOOST, 2, forward.Z * Config.MANTLE_BOOST)
+			end
+		end
+	end)
+end
+
+local function startLedgeGrab(hangPos: Vector3, topPos: Vector3, forward: Vector3)
+	local hum = humanoid
+	local r = root
+	if not hum or not r or ledgeGrabbing then
+		return
+	end
+	ledgeGrabbing = true
+	ledgeHangPos = hangPos
+	ledgeTopPos = topPos
+	ledgeForward = forward
+	player:SetAttribute("LedgeGrabbing", true)
+
+	hum.AutoRotate = false
+	hum.PlatformStand = true
+	hum:ChangeState(Enum.HumanoidStateType.Physics)
+	r.AssemblyLinearVelocity = Vector3.zero
+	r.CFrame = CFrame.new(hangPos, hangPos + forward)
+
+	-- Hold hang position until player climbs up, drops, or state invalidates.
+	task.spawn(function()
+		while ledgeGrabbing do
+			if character == nil or humanoid ~= hum or root ~= r or movementLocked() then
+				releaseLedge(true)
+				break
+			end
+			r.AssemblyLinearVelocity = Vector3.zero
+			r.CFrame = CFrame.new(ledgeHangPos, ledgeHangPos + ledgeForward)
+			RunService.Heartbeat:Wait()
+		end
+	end)
+end
+
+local function tryLedgeGrab(): boolean
 	local r = root
 	local hum = humanoid
 	local char = character
 	if not r or not hum or not char then
 		return false
 	end
-	if movementLocked() then
+	if movementLocked() or ledgeGrabbing or sliding then
 		return false
 	end
 	local look = r.CFrame.LookVector
@@ -154,50 +264,23 @@ local function tryMantle(): boolean
 		return false
 	end
 
-	local targetPos = Vector3.new(
+	local topPos = Vector3.new(
 		downHit.Position.X,
 		ledgeY + hum.HipHeight + (r.Size.Y / 2) + 0.2,
 		downHit.Position.Z
 	)
-	-- move slightly onto the ledge
-	targetPos += forward * 1.1
+	topPos += forward * 1.1
 
-	-- Smooth mantle/climb instead of instant teleport.
-	local startPos = r.Position
-	hum.AutoRotate = false
-	hum.PlatformStand = true
-	r.AssemblyLinearVelocity = Vector3.zero
+	-- Hang position: at the edge, below the ledge top (grab the edge)
+	local hangPos = Vector3.new(
+		forwardHit.Position.X - forward.X * 1.1,
+		ledgeY - 1.8,
+		forwardHit.Position.Z - forward.Z * 1.1
+	)
 
-	task.spawn(function()
-		local duration = 0.28
-		local steps = 14
-		for i = 1, steps do
-			if character ~= char or humanoid ~= hum or root ~= r or movementLocked() then
-				break
-			end
-			local alpha = i / steps
-			-- ease out a bit and lift up then forward
-			local liftAlpha = math.clamp(alpha * 1.2, 0, 1)
-			local pos = startPos:Lerp(targetPos, liftAlpha)
-			pos = Vector3.new(pos.X, startPos.Y + (targetPos.Y - startPos.Y) * liftAlpha, pos.Z)
-			-- add a small forward carry near end
-			if alpha > 0.5 then
-				local forwardAlpha = (alpha - 0.5) / 0.5
-				pos += forward * (0.4 * forwardAlpha)
-			end
-			r.CFrame = CFrame.new(pos, pos + forward)
-			task.wait(duration / steps)
-		end
-		if character == char and humanoid == hum and root == r then
-			hum.PlatformStand = false
-			hum.AutoRotate = true
-			if not movementLocked() then
-				hum:ChangeState(Enum.HumanoidStateType.Running)
-				r.AssemblyLinearVelocity =
-					Vector3.new(forward.X * Config.MANTLE_BOOST, 2, forward.Z * Config.MANTLE_BOOST)
-			end
-		end
-	end)
+	startLedgeGrab(hangPos, topPos, forward)
+	canDoubleJump = true
+	hasDoubleJumped = false
 	return true
 end
 
@@ -235,7 +318,7 @@ local function startSlide()
 	if not hum or not r or not char then
 		return
 	end
-	if sliding or movementLocked() then
+	if sliding or ledgeGrabbing or movementLocked() then
 		return
 	end
 	if os.clock() - lastSlideEnd < Config.SLIDE_COOLDOWN then
@@ -330,7 +413,7 @@ local function tryWallJump(): boolean
 	if not hum or not r or not char then
 		return false
 	end
-	if isGrounded(hum) then
+	if ledgeGrabbing or isGrounded(hum) then
 		return false
 	end
 	local wallNormal = findWall()
@@ -360,6 +443,12 @@ local function onJumpAction(allowWallJump: boolean)
 		return
 	end
 
+	-- If hanging on a ledge, press jump again to climb up (mantle).
+	if ledgeGrabbing then
+		climbLedge()
+		return
+	end
+
 	-- Slide-jump momentum: jump while sliding
 	if sliding then
 		if trySlideJump() then
@@ -367,10 +456,8 @@ local function onJumpAction(allowWallJump: boolean)
 		end
 	end
 
-	-- Try mantle first when moving into a ledge
-	if tryMantle() then
-		canDoubleJump = true
-		hasDoubleJumped = false
+	-- Try to grab a ledge when moving into it
+	if tryLedgeGrab() then
 		return
 	end
 
@@ -400,6 +487,8 @@ local function bindCharacter(char: Model)
 	canDoubleJump = false
 	hasDoubleJumped = false
 	setSliding(false)
+	ledgeGrabbing = false
+	player:SetAttribute("LedgeGrabbing", false)
 	lastSlideEnd = 0
 	slideDirection = Vector3.zero
 
@@ -477,6 +566,10 @@ UserInputService.InputBegan:Connect(function(input: InputObject, processed: bool
 	-- Rebindable wall jump key: handle here when not Space (Space is handled via JumpRequest).
 	local wj = getWallJumpKey()
 	if input.KeyCode == wj and wj ~= Enum.KeyCode.Space then
+		if ledgeGrabbing then
+			climbLedge()
+			return
+		end
 		if tryWallJump() then
 			return
 		end
@@ -489,9 +582,14 @@ UserInputService.JumpRequest:Connect(function()
 	onJumpAction(allowWallJump)
 end)
 
--- Stop slide if movement lock engages mid-slide
+-- Stop slide/ledge grab if movement lock engages
 player:GetAttributeChangedSignal("MenuMovementLocked"):Connect(function()
-	if movementLocked() and sliding then
-		endSlide()
+	if movementLocked() then
+		if sliding then
+			endSlide()
+		end
+		if ledgeGrabbing then
+			releaseLedge(true)
+		end
 	end
 end)
