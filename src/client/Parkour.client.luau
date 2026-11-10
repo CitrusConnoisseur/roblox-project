@@ -333,8 +333,25 @@ local function startSlide()
 	end
 	dir = dir.Unit
 
+	local function getFacingDirection(): Vector3
+		local camera = Workspace.CurrentCamera
+		if camera then
+			local look = camera.CFrame.LookVector
+			local flat = Vector3.new(look.X, 0, look.Z)
+			if flat.Magnitude > 0.1 then
+				return flat.Unit
+			end
+		end
+		local look = r.CFrame.LookVector
+		local flat = Vector3.new(look.X, 0, look.Z)
+		if flat.Magnitude > 0.1 then
+			return flat.Unit
+		end
+		return dir
+	end
+
 	setSliding(true)
-	slideDirection = dir
+	slideDirection = getFacingDirection()
 	hum.AutoRotate = false
 
 	local startTime = os.clock()
@@ -346,17 +363,9 @@ local function startSlide()
 			if not isGrounded(hum) then
 				break
 			end
-			-- steer slide in the direction the player is facing/moving
-			local newDir = getMoveDirection()
-			if newDir.Magnitude > 0.1 then
-				slideDirection = newDir.Unit
-			else
-				local look = r.CFrame.LookVector
-				local flatLook = Vector3.new(look.X, 0, look.Z)
-				if flatLook.Magnitude > 0.1 then
-					slideDirection = flatLook.Unit
-				end
-			end
+			-- steer slide by where the player is facing (camera), not WASD movement keys
+			slideDirection = getFacingDirection()
+			r.CFrame = CFrame.new(r.Position, r.Position + slideDirection)
 			local flatVel = slideDirection * Config.SLIDE_SPEED
 			r.AssemblyLinearVelocity = Vector3.new(flatVel.X, r.AssemblyLinearVelocity.Y, flatVel.Z)
 			RunService.Heartbeat:Wait()
